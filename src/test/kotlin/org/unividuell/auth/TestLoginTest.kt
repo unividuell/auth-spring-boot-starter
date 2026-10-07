@@ -131,6 +131,16 @@ class TestLoginTest(
     }
 
     @Test
+    fun `the sign-in POST without a CSRF token is refused`() {
+        mockMvc.post("/login/test/as") { param("login", "leela") }.andExpect { status { isForbidden() } }
+    }
+
+    @Test
+    fun `the unlock POST without a CSRF token is refused`() {
+        mockMvc.post("/login/test/unlock") { param("key", "anything") }.andExpect { status { isForbidden() } }
+    }
+
+    @Test
     fun `the picker carries a redirect through to its forms`() {
         // get(URI) keeps the percent-escapes as they are; get(String) would encode them again.
         mockMvc.get(URI("/login?redirect=/c/team/lab/sample%3Fseed%3D42")).andExpect {

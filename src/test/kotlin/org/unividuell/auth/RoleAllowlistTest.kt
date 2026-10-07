@@ -63,6 +63,17 @@ class RoleAllowlistTest {
     }
 
     @Test
+    fun `two keys naming the same role stop the start`() {
+        // Last one wins in a map: one of the two lists would silently grant nothing.
+        val thrown = shouldThrow<IllegalStateException> {
+            RoleAllowlist(mapOf("super-admin" to listOf("github:alice"), "Super-Admin" to listOf("github:bob")))
+        }
+
+        thrown.message shouldContain "super-admin"
+        thrown.message shouldContain "Super-Admin"
+    }
+
+    @Test
     fun `an unknown role has no members`() {
         RoleAllowlist(emptyMap()).members("SUPER_ADMIN").shouldBeEmpty()
     }

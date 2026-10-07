@@ -13,6 +13,13 @@ data class RoleMember(val provider: String, val login: String)
  */
 class RoleAllowlist(entriesByRole: Map<String, List<String>>) {
 
+    init {
+        // Keys that fold onto one role would collide below, the last list silently replacing the first.
+        entriesByRole.keys.groupBy { roleName(key = it) }.forEach { (role, keys) ->
+            check(keys.size == 1) { "unividuell.auth.roles keys ${keys.joinToString()} all name the role $role — keep one" }
+        }
+    }
+
     private val membersByRole: Map<String, List<RoleMember>> =
         entriesByRole.entries.associate { (key, values) ->
             roleName(key = key) to values.mapNotNull { parse(key = key, entry = it) }
