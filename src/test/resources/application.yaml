@@ -1,0 +1,13 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: test-client-id
+            client-secret: test-client-secret
+
+unividuell:
+  auth:
+    csrf-cookie:
+      excluded-paths: /api/public/**
