@@ -33,7 +33,7 @@ class ProviderUserService(
             signIn.signIn(identity)
         } catch (e: RuntimeException) {
             logger.warn(e) { "account provisioning failed for provider '$provider'" }
-            throw OAuth2AuthenticationException(OAuth2Error("provisioning_failed"), e)
+            throw OAuth2AuthenticationException(OAuth2Error("provisioning_failed"))
         }
     }
 

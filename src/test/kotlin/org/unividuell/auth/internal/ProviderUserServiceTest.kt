@@ -2,6 +2,7 @@ package org.unividuell.auth.internal
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Test
@@ -118,5 +119,7 @@ class ProviderUserServiceTest {
         }
 
         thrown.error.errorCode shouldBe "provisioning_failed"
+        // The failure handler puts this exception into the session, so the app's throwable must not ride along.
+        thrown.cause.shouldBeNull()
     }
 }
