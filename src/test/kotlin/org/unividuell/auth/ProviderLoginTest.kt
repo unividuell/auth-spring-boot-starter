@@ -3,11 +3,17 @@ package org.unividuell.auth
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.string.shouldStartWith
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.system.CapturedOutput
+import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.mock.web.MockHttpSession
+import org.springframework.security.web.WebAttributes
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -17,6 +23,7 @@ import org.unividuell.auth.testapp.TestApplication
 @SpringBootTest(classes = [TestApplication::class])
 @AutoConfigureMockMvc
 @ActiveProfiles("production")
+@ExtendWith(OutputCaptureExtension::class)
 class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
@@ -44,6 +51,31 @@ class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
             status { isFound() }
             redirectedUrl("/login?error")
         }
+    }
+
+    @Test
+    fun `a failed callback leaves no session behind`() {
+        // Spring's default handler stores the exception in a session, creating one for a forged callback.
+        mockMvc.get("/login/oauth2/code/github?code=abc&state=forged").andExpect {
+            redirectedUrl("/login?error")
+        }.andReturn().request.getSession(false).shouldBeNull()
+    }
+
+    @Test
+    fun `a failed callback keeps its exception out of an existing session`() {
+        val session = MockHttpSession()
+
+        mockMvc.get("/login/oauth2/code/github?code=abc&state=forged") { this.session = session }
+
+        session.getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION).shouldBeNull()
+    }
+
+    @Test
+    fun `a failed callback is logged by its error code, not by its code`(output: CapturedOutput) {
+        mockMvc.get("/login/oauth2/code/github?code=leaked-code-4711&state=forged")
+
+        output.out shouldContain "authorization_request_not_found"
+        output.out shouldNotContain "leaked-code-4711"
     }
 
     @Test

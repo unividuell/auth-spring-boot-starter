@@ -134,7 +134,7 @@ class ProviderUserServiceTest {
         }
 
         thrown.error.errorCode shouldBe "provisioning_failed"
-        // The failure handler puts this exception into the session, so the app's throwable must not ride along.
+        // Spring's default failure handler puts this exception into the session; the app's throwable must not ride along.
         thrown.cause.shouldBeNull()
     }
 }

@@ -25,6 +25,7 @@ import org.springframework.security.web.savedrequest.NullRequestCache
 import org.unividuell.auth.internal.AccountSignIn
 import org.unividuell.auth.internal.CsrfCookieFilter
 import org.unividuell.auth.internal.LoginController
+import org.unividuell.auth.internal.ProviderFailureHandler
 import org.unividuell.auth.internal.ProviderUserService
 import org.unividuell.auth.internal.TestLoginConfiguration
 
@@ -74,7 +75,7 @@ class AuthAutoConfiguration {
             if (clients.ifAvailable != null) {
                 oauth2Login {
                     loginPage = "/login"
-                    failureUrl = "/login?error"
+                    authenticationFailureHandler = ProviderFailureHandler()
                     userInfoEndpoint {
                         userService = providerUserService
                         oidcUserService = ProviderUserService.oidcRefusal
