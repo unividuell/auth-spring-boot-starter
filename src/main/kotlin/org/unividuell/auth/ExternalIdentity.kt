@@ -11,5 +11,6 @@ data class ExternalIdentity(
     val subject: String,
     val login: String,
     val name: String?,
+    /** GitHub's public profile address, unverified — never key or link accounts on it. */
     val email: String?,
 )

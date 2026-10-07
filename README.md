@@ -1,7 +1,9 @@
 # auth-spring-boot-starter
 
-Sign-in for Spring Boot apps with a same-origin SPA: real OAuth2 providers in production, a
-test-user picker everywhere else — behind a key wherever a profile is active.
+Sign-in for Spring Boot apps with a same-origin SPA: GitHub sign-in in production, a test-user
+picker everywhere else — behind a key wherever a profile is active.
+
+Requires Java 25, Spring Boot 4.1 and the servlet stack (Spring MVC).
 
 ## Use it
 
@@ -23,6 +25,9 @@ fun accountProvisioner(accounts: AccountRepository) = AccountProvisioner { ident
 }
 ```
 
+`identity.email` is GitHub's public profile address, unverified — never key or link accounts on
+it.
+
 Read the principal in controllers with `@AuthenticationPrincipal me: AuthPrincipal` (`me.id`,
 `me.provider`, `me.login`, `me.roles`).
 
@@ -41,7 +46,9 @@ fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
 }
 ```
 
-Without a chain of your own, every request needs a signed-in user.
+Without a chain of your own, every request needs a signed-in user. Do not narrow yours with
+`securityMatcher`: the starter's endpoints and CSRF live in that chain, so requests outside the
+matcher lose them.
 
 ## Configuration
 
@@ -66,6 +73,10 @@ spring.security.oauth2.client.registration.github:   # production only
 | `GET /login` | picker | key, then picker | redirect to the provider |
 | OAuth2 client | not needed | none | required |
 
+0.1.0 maps GitHub only: any other registration, or one requesting `openid`, refuses to start.
+Profile names are taken literally: only `production` switches the test login off; any other, such
+as `staging`, needs the key. The starter assumes the root context path.
+
 ## The SPA contract
 
 - An unauthenticated request gets **401**, never a redirect. The SPA sends the browser to `/login`
@@ -78,7 +89,11 @@ spring.security.oauth2.client.registration.github:   # production only
 - there is no OAuth2 client and no active test login (no way in);
 - there are several clients and no test login (the chooser page does not exist yet);
 - the test login is on, its key is empty and any profile is active;
-- a role entry lacks its `provider:` prefix;
+- the test login has a key and an OAuth2 client is registered (a door past the lock);
+- a client's registration id is not `github`, or it requests the `openid` scope — also while the
+  test login is on;
+- a role entry lacks its `provider:` prefix, or two role keys name the same role (`super-admin`,
+  `Super-Admin`);
 - the app provides no `AccountProvisioner`.
 
 ## Rules
