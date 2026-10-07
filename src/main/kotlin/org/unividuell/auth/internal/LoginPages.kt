@@ -2,6 +2,9 @@ package org.unividuell.auth.internal
 
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.web.csrf.CsrfToken
+import org.springframework.web.util.HtmlUtils
+import org.unividuell.auth.AuthProperties
 import java.nio.charset.StandardCharsets
 
 /** The server-rendered pages under /login. German copy; every echoed value is escaped. */
@@ -13,6 +16,44 @@ internal object LoginPages {
           <p>Die Anmeldung hat nicht geklappt.</p>
           <a class="action" href="/login">Erneut versuchen</a>""",
     )
+
+    fun picker(csrf: CsrfToken, redirect: String?, users: List<AuthProperties.TestUser>): String {
+        val buttons = users.joinToString(separator = "\n") { user ->
+            """<form method="post" action="/login/test/as">
+                 <input type="hidden" name="_csrf" value="${escape(csrf.token)}"/>
+                 <input type="hidden" name="login" value="${escape(user.login)}"/>
+                 <input type="hidden" name="redirect" value="${escape(redirect.orEmpty())}"/>
+                 <button type="submit">
+                   <span class="chip" aria-hidden="true">${escape(user.emoji)}</span>
+                   <span>${escape(user.name ?: user.login)}</span>
+                 </button>
+               </form>"""
+        }
+        return page(title = "Test-Login", body = """<h1>Test-Login</h1>$buttons""")
+    }
+
+    /**
+     * The locked page is the keyhole: being locked out always shows where the key goes. It names no
+     * test user — a locked door that lists what is behind it shows what there is to take.
+     */
+    fun locked(csrf: CsrfToken, redirect: String?, wrongKey: Boolean): String {
+        val error = if (wrongKey) """<p class="error">Falscher Schlüssel.</p>""" else ""
+        return page(
+            title = "Gesperrt",
+            body = """<h1>Gesperrt</h1>
+              <p>Diese Umgebung ist nicht öffentlich.</p>
+              $error
+              <form method="post" action="/login/test/unlock">
+                <input type="hidden" name="_csrf" value="${escape(csrf.token)}"/>
+                <input type="hidden" name="redirect" value="${escape(redirect.orEmpty())}"/>
+                <input type="password" name="key" autocomplete="current-password" autofocus required
+                       aria-label="Zugangsschlüssel" placeholder="Zugangsschlüssel"/>
+                <button type="submit" class="action"><span>Freischalten</span></button>
+              </form>""",
+        )
+    }
+
+    private fun escape(value: String): String = HtmlUtils.htmlEscape(value)
 
     /**
      * The shell all pages share. Without the viewport meta, phones lay a page out at their ~980px

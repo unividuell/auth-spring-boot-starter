@@ -9,5 +9,7 @@ spring:
 
 unividuell:
   auth:
+    roles:
+      super-admin: test:prof
     csrf-cookie:
       excluded-paths: /api/public/**

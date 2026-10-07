@@ -26,6 +26,7 @@ import org.unividuell.auth.internal.AccountSignIn
 import org.unividuell.auth.internal.CsrfCookieFilter
 import org.unividuell.auth.internal.LoginController
 import org.unividuell.auth.internal.ProviderUserService
+import org.unividuell.auth.internal.TestLoginConfiguration
 
 /**
  * Runs before Boot's own security auto-configurations, actuator's included, so that its default
@@ -40,7 +41,7 @@ import org.unividuell.auth.internal.ProviderUserService
 )
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @EnableConfigurationProperties(AuthProperties::class)
-@Import(LoginController::class)
+@Import(LoginController::class, TestLoginConfiguration::class)
 class AuthAutoConfiguration {
 
     @Bean
