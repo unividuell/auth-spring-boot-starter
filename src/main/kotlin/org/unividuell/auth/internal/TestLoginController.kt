@@ -46,6 +46,9 @@ class TestLoginController(private val testLogin: TestLoginService) {
             return redirectTo("/login?error")
         }
 
+        // As the provider door does: a session id handed out before the sign-in must not be signed in.
+        request.getSession(false)?.let { request.changeSessionId() }
+
         val token = OAuth2AuthenticationToken(principal, principal.authorities, "test")
         val context = SecurityContextHolder.createEmptyContext().apply { authentication = token }
         SecurityContextHolder.setContext(context)

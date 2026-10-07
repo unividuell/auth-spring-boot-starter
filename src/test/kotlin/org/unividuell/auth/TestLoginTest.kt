@@ -2,6 +2,7 @@ package org.unividuell.auth
 
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
@@ -94,6 +95,15 @@ class TestLoginTest(
             jsonPath("$.login") { value("prof") }
             jsonPath("$.roles[0]") { value("SUPER_ADMIN") }
         }
+    }
+
+    @Test
+    fun `signing in gives an existing session a new id`() {
+        // Session fixation: an id handed out before the sign-in must not end up signed in.
+        val session = MockHttpSession()
+        val before = session.id
+
+        signInAs(login = "leela", session = session).id shouldNotBe before
     }
 
     @Test
