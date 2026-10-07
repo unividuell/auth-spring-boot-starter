@@ -20,6 +20,9 @@ class FakeSignInGate(rawKey: String, environment: Environment) {
     /** What a browser must present — the hash, never the key itself. */
     private val expected: String? = key?.let(::sha256Hex)
 
+    /** Whether a key is set, i.e. this is a deployed environment's lock. */
+    val hasKey: Boolean = key != null
+
     init {
         val active = environment.activeProfiles
         // Any profile is a deployed environment. Compose passes a missing variable through as an

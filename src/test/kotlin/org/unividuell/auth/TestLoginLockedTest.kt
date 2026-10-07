@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.mock.web.MockHttpSession
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -21,6 +22,7 @@ import org.unividuell.auth.testapp.TestApplication
 /** The locked half: the only place the lock is shut. Everything else runs without a key. */
 @SpringBootTest(classes = [TestApplication::class])
 @AutoConfigureMockMvc
+@ActiveProfiles("staging")
 @TestPropertySource(properties = ["unividuell.auth.test-login.key=open-sesame"])
 class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
 

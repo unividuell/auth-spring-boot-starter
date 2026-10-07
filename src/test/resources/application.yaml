@@ -1,4 +1,8 @@
+# Staging has no client: next to the key it would be a door past the lock.
 spring:
+  config:
+    activate:
+      on-profile: "!staging"
   security:
     oauth2:
       client:
@@ -6,7 +10,7 @@ spring:
           github:
             client-id: test-client-id
             client-secret: test-client-secret
-
+---
 unividuell:
   auth:
     roles:

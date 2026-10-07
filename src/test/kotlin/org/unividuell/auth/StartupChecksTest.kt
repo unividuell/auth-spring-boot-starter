@@ -109,6 +109,17 @@ class StartupChecksTest {
     }
 
     @Test
+    fun `refuses a key next to a client`() {
+        // /oauth2/authorization/github would be a second door, past the lock.
+        runner.withPropertyValues(*github, "spring.profiles.active=staging", "unividuell.auth.test-login.key=open-sesame")
+            .run { context ->
+                val message = context.startupFailure.shouldNotBeNull().rootMessage()
+                message shouldContain "unividuell.auth.test-login.key"
+                message shouldContain "spring.security.oauth2.client.registration"
+            }
+    }
+
+    @Test
     fun `refuses an app without an AccountProvisioner`() {
         WebApplicationContextRunner()
             .withUserConfiguration(NoProvisionerApp::class.java)

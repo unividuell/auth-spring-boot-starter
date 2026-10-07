@@ -38,6 +38,12 @@ class LoginController(
     init {
         // With the picker on too: /oauth2/authorization/{id} stays reachable beside it.
         registrations.forEach(::checkMapped)
+
+        check(testLogin?.gate?.hasKey != true || registrations.isEmpty()) {
+            "unividuell.auth.test-login.key is set next to OAuth2 client(s) " +
+                "${registrations.joinToString { it.registrationId }} (spring.security.oauth2.client.registration) — " +
+                "/oauth2/authorization/{id} would be a door past the lock; remove the client"
+        }
     }
 
     @GetMapping("/login")
