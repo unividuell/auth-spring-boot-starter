@@ -4,6 +4,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Lazy
 import org.springframework.context.annotation.Profile
 import org.springframework.core.env.Environment
 import org.unividuell.auth.AuthProperties
@@ -19,7 +20,9 @@ import org.unividuell.auth.AuthProperties
 @Import(TestLoginController::class)
 class TestLoginConfiguration {
 
+    /** Eager, for its startup check: lazy initialization would defer it to a request. */
     @Bean
+    @Lazy(false)
     fun fakeSignInGate(properties: AuthProperties, environment: Environment): FakeSignInGate =
         FakeSignInGate(rawKey = properties.testLogin.key, environment = environment)
 

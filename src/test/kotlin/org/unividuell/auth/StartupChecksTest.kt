@@ -1,10 +1,12 @@
 package org.unividuell.auth
 
+import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.Test
+import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.context.annotation.Configuration
@@ -127,6 +129,30 @@ class StartupChecksTest {
             .run { context ->
                 context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "AccountProvisioner"
             }
+    }
+
+    @Test
+    fun `refuses under lazy initialization too`() {
+        // spring.main.lazy-initialization would defer each check to the first request needing its bean.
+        val lazy = { runner: WebApplicationContextRunner ->
+            runner.withInitializer { it.addBeanFactoryPostProcessor(LazyInitializationBeanFactoryPostProcessor()) }
+        }
+        val refused = mapOf(
+            "unmapped client" to arrayOf(*google, "spring.profiles.active=production"),
+            "key next to a client" to arrayOf(*github, "spring.profiles.active=staging", "unividuell.auth.test-login.key=k"),
+            "staging without a key" to arrayOf("spring.profiles.active=staging"),
+            "role entry without prefix" to
+                arrayOf(*github, "spring.profiles.active=production", "unividuell.auth.roles.super-admin=octocat"),
+        )
+
+        refused.forEach { (case, properties) ->
+            lazy(runner).withPropertyValues(*properties).run { context ->
+                withClue(case) { context.startupFailure.shouldNotBeNull() }
+            }
+        }
+        lazy(WebApplicationContextRunner().withUserConfiguration(NoProvisionerApp::class.java))
+            .withPropertyValues(*github, "spring.profiles.active=production")
+            .run { context -> withClue("no AccountProvisioner") { context.startupFailure.shouldNotBeNull() } }
     }
 
     @Test

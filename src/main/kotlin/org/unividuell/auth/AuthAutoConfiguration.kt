@@ -11,6 +11,7 @@ import org.springframework.boot.security.autoconfigure.actuate.web.servlet.Manag
 import org.springframework.boot.security.oauth2.client.autoconfigure.servlet.OAuth2ClientWebSecurityAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -47,10 +48,14 @@ import org.unividuell.auth.internal.TestLoginConfiguration
 @Import(LoginController::class, TestLoginConfiguration::class)
 class AuthAutoConfiguration {
 
+    /** Eager, for its startup checks: lazy initialization would defer them to a request. */
     @Bean
+    @Lazy(false)
     fun roleAllowlist(properties: AuthProperties): RoleAllowlist = RoleAllowlist(properties.roles)
 
+    /** Eager: without an [AccountProvisioner] the start must fail, not the first sign-in. */
     @Bean
+    @Lazy(false)
     fun accountSignIn(provisioner: AccountProvisioner, allowlist: RoleAllowlist): AccountSignIn =
         AccountSignIn(provisioner = provisioner, allowlist = allowlist)
 

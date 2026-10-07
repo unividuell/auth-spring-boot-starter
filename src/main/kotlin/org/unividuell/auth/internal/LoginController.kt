@@ -2,6 +2,7 @@ package org.unividuell.auth.internal
 
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,8 +21,11 @@ import org.springframework.web.bind.annotation.RequestParam
  * `?error` always renders the error page: Spring sends a failed callback here, and redirecting
  * straight back to the provider would loop on a claim that keeps failing. Only the parameter's
  * presence counts — MockMvc hands a valueless `?error` over as null, a servlet container as "".
+ *
+ * Eager, for its startup checks: lazy initialization would defer them to the first request.
  */
 @Controller
+@Lazy(false)
 class LoginController(
     testLoginProvider: ObjectProvider<TestLoginService>,
     clients: ObjectProvider<ClientRegistrationRepository>,
