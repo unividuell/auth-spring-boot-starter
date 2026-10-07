@@ -75,7 +75,10 @@ class AuthAutoConfiguration {
                 oauth2Login {
                     loginPage = "/login"
                     failureUrl = "/login?error"
-                    userInfoEndpoint { userService = providerUserService }
+                    userInfoEndpoint {
+                        userService = providerUserService
+                        oidcUserService = ProviderUserService.oidcRefusal
+                    }
                 }
             }
             exceptionHandling {

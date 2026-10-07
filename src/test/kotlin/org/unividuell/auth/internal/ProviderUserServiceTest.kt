@@ -7,10 +7,12 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Test
 import org.springframework.security.config.oauth2.client.CommonOAuth2Provider
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService
 import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.unividuell.auth.AccountProvisioner
@@ -105,6 +107,19 @@ class ProviderUserServiceTest {
 
         thrown.error.errorCode shouldBe "unsupported_provider"
         provisioned.shouldBeEmpty()
+    }
+
+    @Test
+    fun `an OpenID Connect sign-in fails instead of passing the app by`() {
+        val request = OidcUserRequest(
+            CommonOAuth2Provider.GOOGLE.getBuilder("google").clientId("client").clientSecret("secret").build(),
+            OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "token", Instant.now(), Instant.now().plusSeconds(60)),
+            OidcIdToken("id-token", Instant.now(), Instant.now().plusSeconds(60), mapOf("sub" to "4711")),
+        )
+
+        val thrown = shouldThrow<OAuth2AuthenticationException> { ProviderUserService.oidcRefusal.loadUser(request) }
+
+        thrown.error.errorCode shouldBe "unsupported_provider"
     }
 
     @Test

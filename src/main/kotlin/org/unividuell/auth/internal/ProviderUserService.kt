@@ -1,11 +1,13 @@
 package org.unividuell.auth.internal
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException
 import org.springframework.security.oauth2.core.OAuth2Error
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.unividuell.auth.ExternalIdentity
 
@@ -37,13 +39,24 @@ class ProviderUserService(
         }
     }
 
-    private fun unsupported(provider: String): OAuth2AuthenticationException {
-        val message = "no identity mapping for provider '$provider'"
-        return OAuth2AuthenticationException(OAuth2Error("unsupported_provider", message, null), message)
-    }
-
-    private companion object {
+    companion object {
         /** Keyed by registration id. A new provider adds its mapping here. */
-        val MAPPINGS: Map<String, (Map<String, Any>) -> ExternalIdentity> = mapOf("github" to ::gitHubIdentity)
+        private val MAPPINGS: Map<String, (Map<String, Any>) -> ExternalIdentity> = mapOf("github" to ::gitHubIdentity)
+
+        /** Whether a client of this registration id can sign in; the start is refused for one that cannot. */
+        internal fun supports(registrationId: String): Boolean = registrationId in MAPPINGS
+
+        /**
+         * oauth2Login's OIDC user service. No OIDC mapping exists yet; should an `openid` client slip past
+         * the startup check, its sign-in fails here instead of reaching Spring's stock service, which
+         * would sign the user in past the [AccountSignIn].
+         */
+        internal val oidcRefusal: OAuth2UserService<OidcUserRequest, OidcUser> =
+            OAuth2UserService { throw unsupported(it.clientRegistration.registrationId) }
+
+        private fun unsupported(provider: String): OAuth2AuthenticationException {
+            val message = "no identity mapping for provider '$provider'"
+            return OAuth2AuthenticationException(OAuth2Error("unsupported_provider", message, null), message)
+        }
     }
 }

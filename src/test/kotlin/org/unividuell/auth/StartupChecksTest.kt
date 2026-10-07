@@ -45,8 +45,10 @@ class StartupChecksTest {
     }
 
     @Test
-    fun `starts on localhost with two clients, the picker owning the page`() {
-        runner.withPropertyValues(*github, *google).run { context -> context.startupFailure.shouldBeNull() }
+    fun `refuses an unmapped client while the picker owns the page too`() {
+        runner.withPropertyValues(*github, *google).run { context ->
+            context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "'google'"
+        }
     }
 
     @Test
@@ -67,6 +69,29 @@ class StartupChecksTest {
     fun `refuses production with two clients`() {
         runner.withPropertyValues(*github, *google, "spring.profiles.active=production").run { context ->
             context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "no chooser page"
+        }
+    }
+
+    @Test
+    fun `refuses a client without an identity mapping`() {
+        // Boot's google defaults request openid, which Spring's stock OIDC service would sign in.
+        runner.withPropertyValues(*google, "spring.profiles.active=production").run { context ->
+            val message = context.startupFailure.shouldNotBeNull().rootMessage()
+            message shouldContain "'google'"
+            message shouldContain "0.1.0 maps only 'github'"
+        }
+    }
+
+    @Test
+    fun `refuses a client that requests openid`() {
+        runner.withPropertyValues(
+            *github,
+            "spring.security.oauth2.client.registration.github.scope=openid,read:user",
+            "spring.profiles.active=production",
+        ).run { context ->
+            val message = context.startupFailure.shouldNotBeNull().rootMessage()
+            message shouldContain "'github'"
+            message shouldContain "openid"
         }
     }
 

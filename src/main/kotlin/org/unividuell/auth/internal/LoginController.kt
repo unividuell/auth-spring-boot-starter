@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.core.oidc.OidcScopes
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -28,9 +29,16 @@ class LoginController(
 
     private val testLogin: TestLoginService? = testLoginProvider.ifAvailable
 
+    private val registrations: List<ClientRegistration> = registrations(clients.ifAvailable)
+
     /** Null while the picker owns the page; then neither "no client" nor "several" stops the start. */
     private val providerPath: String? =
-        if (testLogin != null) null else singleProviderPath(registrationIds(clients.ifAvailable))
+        if (testLogin != null) null else singleProviderPath(registrations.map { it.registrationId })
+
+    init {
+        // With the picker on too: /oauth2/authorization/{id} stays reachable beside it.
+        registrations.forEach(::checkMapped)
+    }
 
     @GetMapping("/login")
     fun login(
@@ -49,9 +57,9 @@ class LoginController(
     }
 }
 
-private fun registrationIds(repository: ClientRegistrationRepository?): List<String> = when (repository) {
+private fun registrations(repository: ClientRegistrationRepository?): List<ClientRegistration> = when (repository) {
     null -> emptyList()
-    is Iterable<*> -> repository.filterIsInstance<ClientRegistration>().map { it.registrationId }
+    is Iterable<*> -> repository.filterIsInstance<ClientRegistration>()
     else -> error("${repository.javaClass.name} cannot list its clients, and the sign-in needs to know them")
 }
 
@@ -64,4 +72,16 @@ private fun singleProviderPath(ids: List<String>): String {
         "Sign-in has ${ids.size} OAuth2 clients (${ids.joinToString()}) but no chooser page yet — register exactly one"
     }
     return "/oauth2/authorization/${ids.single()}"
+}
+
+/** An unmapped client fails only at its callback; an `openid` one would sign in past the app. */
+private fun checkMapped(registration: ClientRegistration) {
+    val id = registration.registrationId
+    check(ProviderUserService.supports(id)) {
+        "OAuth2 client '$id' has no identity mapping — 0.1.0 maps only 'github'"
+    }
+    check(OidcScopes.OPENID !in registration.scopes) {
+        "OAuth2 client '$id' requests scope 'openid', but there is no OpenID Connect mapping yet — " +
+            "0.1.0 maps only 'github', over plain OAuth2"
+    }
 }
