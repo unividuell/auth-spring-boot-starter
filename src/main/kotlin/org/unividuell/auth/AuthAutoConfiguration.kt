@@ -1,5 +1,6 @@
 package org.unividuell.auth
 
+import jakarta.servlet.DispatcherType
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -22,6 +23,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler
 import org.springframework.security.web.savedrequest.NullRequestCache
+import org.springframework.security.web.util.matcher.DispatcherTypeRequestMatcher
 import org.unividuell.auth.internal.AccountSignIn
 import org.unividuell.auth.internal.CsrfCookieFilter
 import org.unividuell.auth.internal.LoginController
@@ -70,6 +72,8 @@ class AuthAutoConfiguration {
             authorizeHttpRequests {
                 authorize(pattern = "/login/**", access = permitAll)
                 authorize(pattern = "/oauth2/**", access = permitAll)
+                // A container re-dispatches every sendError to /error; else an anonymous 400 or 404 becomes 401.
+                authorize(matches = DispatcherTypeRequestMatcher(DispatcherType.ERROR), access = permitAll)
             }
             // oauth2Login cannot start without a client; no client means no provider door at all.
             if (clients.ifAvailable != null) {
