@@ -21,12 +21,18 @@ fun signedInAs(principal: AuthPrincipal): RequestPostProcessor {
  * `X-XSRF-TOKEN` header a single-page app or htmx sends. The lib's CsrfFilter only checks that the
  * two are equal, so a fixed token runs through the real mechanism.
  *
+ * Replaces a token the request already carries — e.g. the cookie of an earlier response, which the
+ * lib sets on every one — and keeps every other cookie: the lib compares the first `XSRF-TOKEN`
+ * cookie with the first header, so a token added behind an earlier one would never be compared.
+ *
  * Not spring-security-test's `csrf()`: it swaps the shared CsrfFilter's cookie repository for a
  * session-backed one, for good. Every later request in the same test context then gets no
  * `XSRF-TOKEN` cookie and creates a session.
  */
 fun withCsrfToken(): RequestPostProcessor = RequestPostProcessor { request ->
-    request.setCookies(*request.cookies.orEmpty(), Cookie(CSRF_COOKIE, TEST_CSRF_TOKEN))
+    val otherCookies = request.cookies.orEmpty().filterNot { it.name == CSRF_COOKIE }
+    request.setCookies(*otherCookies.toTypedArray(), Cookie(CSRF_COOKIE, TEST_CSRF_TOKEN))
+    request.removeHeader(CSRF_HEADER)
     request.addHeader(CSRF_HEADER, TEST_CSRF_TOKEN)
     request
 }

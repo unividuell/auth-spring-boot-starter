@@ -3,6 +3,7 @@ package org.unividuell.auth
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -66,6 +67,42 @@ class AuthRequestPostProcessorsTest(@Autowired val mockMvc: MockMvc) {
             mapOf("SESSION" to "abc", "XSRF-TOKEN" to TEST_CSRF_TOKEN)
         request.getHeader("X-XSRF-TOKEN") shouldBe TEST_CSRF_TOKEN
     }
+
+    @Test
+    fun `withCsrfToken replaces the token a request already carries`() {
+        val request = MockHttpServletRequest().apply {
+            setCookies(Cookie("SESSION", "abc"), Cookie("XSRF-TOKEN", "earlier"))
+            addHeader("X-XSRF-TOKEN", "earlier")
+        }
+
+        withCsrfToken().postProcessRequest(request)
+
+        request.cookies.orEmpty().map { it.name to it.value } shouldBe
+            listOf("SESSION" to "abc", "XSRF-TOKEN" to TEST_CSRF_TOKEN)
+        request.getHeaders("X-XSRF-TOKEN").toList() shouldBe listOf(TEST_CSRF_TOKEN)
+    }
+
+    @Test
+    fun `withCsrfToken passes the CSRF check next to the cookie of an earlier response`() {
+        // CsrfCookieFilter sets XSRF-TOKEN on every response, and a flow test forwards it; the repository reads the first.
+        mockMvc.post("/api/ping") {
+            cookie(Cookie("XSRF-TOKEN", earlierToken()))
+            with(withCsrfToken())
+        }.andExpect { status { isUnauthorized() } }
+    }
+
+    @Test
+    fun `signedInAs passes the CSRF check next to the cookie of an earlier response`() {
+        mockMvc.post("/api/ping") {
+            cookie(Cookie("XSRF-TOKEN", earlierToken()))
+            with(signedInAs(fry))
+        }.andExpect { status { isOk() } }
+    }
+
+    /** A real token, as the lib hands one to a browser. */
+    private fun earlierToken(): String =
+        mockMvc.get("/api/me").andReturn().response.setCookieValue("XSRF-TOKEN").shouldNotBeNull()
+            .also { it shouldNotBe TEST_CSRF_TOKEN }
 
     @Test
     fun `after signedInAs, an anonymous request still gets the cookie and no session`() {
