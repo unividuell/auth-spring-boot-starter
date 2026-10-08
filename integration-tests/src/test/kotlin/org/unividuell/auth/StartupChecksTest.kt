@@ -20,7 +20,10 @@ class StartupChecksTest {
     @EnableAutoConfiguration
     class NoProvisionerApp
 
-    private val runner = WebApplicationContextRunner().withUserConfiguration(TestApplication::class.java)
+    /** Without a frontend: every app has to name one, so only the frontend checks start from here. */
+    private val bare = WebApplicationContextRunner().withUserConfiguration(TestApplication::class.java)
+
+    private val runner = bare.withPropertyValues("unividuell.auth.frontend=spa")
 
     private val github = arrayOf(
         "spring.security.oauth2.client.registration.github.client-id=id",
@@ -125,7 +128,7 @@ class StartupChecksTest {
     fun `refuses an app without an AccountProvisioner`() {
         WebApplicationContextRunner()
             .withUserConfiguration(NoProvisionerApp::class.java)
-            .withPropertyValues(*github, "spring.profiles.active=production")
+            .withPropertyValues(*github, "spring.profiles.active=production", "unividuell.auth.frontend=spa")
             .run { context ->
                 context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "AccountProvisioner"
             }
@@ -143,6 +146,7 @@ class StartupChecksTest {
             "staging without a key" to arrayOf("spring.profiles.active=staging"),
             "role entry without prefix" to
                 arrayOf(*github, "spring.profiles.active=production", "unividuell.auth.roles.super-admin=octocat"),
+            "login page for spa" to arrayOf(*github, "spring.profiles.active=production", "unividuell.auth.login-page=/login"),
         )
 
         refused.forEach { (case, properties) ->
@@ -150,8 +154,11 @@ class StartupChecksTest {
                 withClue(case) { context.startupFailure.shouldNotBeNull() }
             }
         }
+        lazy(bare).withPropertyValues(*github, "spring.profiles.active=production").run { context ->
+            withClue("no frontend") { context.startupFailure.shouldNotBeNull() }
+        }
         lazy(WebApplicationContextRunner().withUserConfiguration(NoProvisionerApp::class.java))
-            .withPropertyValues(*github, "spring.profiles.active=production")
+            .withPropertyValues(*github, "spring.profiles.active=production", "unividuell.auth.frontend=spa")
             .run { context -> withClue("no AccountProvisioner") { context.startupFailure.shouldNotBeNull() } }
     }
 
@@ -161,5 +168,55 @@ class StartupChecksTest {
             .run { context ->
                 context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "provider:login"
             }
+    }
+
+    @Test
+    fun `refuses an app that does not name its frontend`() {
+        bare.withPropertyValues(*github, "spring.profiles.active=production").run { context ->
+            context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "unividuell.auth.frontend is not set"
+        }
+    }
+
+    @Test
+    fun `refuses a server-rendered app without a login page`() {
+        for (missing in listOf(emptyArray(), arrayOf("unividuell.auth.login-page= "))) {
+            bare.withPropertyValues("unividuell.auth.frontend=server-rendered", *missing).run { context ->
+                withClue(missing.toList()) {
+                    context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "login-page is required"
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `refuses a login page for a single-page app`() {
+        runner.withPropertyValues("unividuell.auth.login-page=/login").run { context ->
+            context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "routes its own login page"
+        }
+    }
+
+    @Test
+    fun `refuses a login page that is not a page of the app`() {
+        // Under /login/ and /oauth2/ a logout would start the sign-in again and sign straight back in.
+        val notAppPages = listOf(
+            "login", "//evil.example", "/\\evil.example", "/login/start", "/login/test/as",
+            "/oauth2/authorization/github", "/welcome?next=/", "/welcome#top",
+        )
+        for (page in notAppPages) {
+            bare.withPropertyValues("unividuell.auth.frontend=server-rendered", "unividuell.auth.login-page=$page")
+                .run { context ->
+                    withClue(page) {
+                        context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "must be a page of the app"
+                    }
+                }
+        }
+    }
+
+    @Test
+    fun `starts a server-rendered app with a page of its own`() {
+        for (page in listOf("/login", "/welcome")) {
+            bare.withPropertyValues("unividuell.auth.frontend=server-rendered", "unividuell.auth.login-page=$page")
+                .run { context -> withClue(page) { context.startupFailure.shouldBeNull() } }
+        }
     }
 }

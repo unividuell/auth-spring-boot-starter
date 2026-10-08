@@ -13,6 +13,7 @@ spring:
 ---
 unividuell:
   auth:
+    frontend: spa
     roles:
       super-admin: test:prof
     csrf-cookie:

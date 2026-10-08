@@ -30,6 +30,7 @@ class AutoConfigurationOrderTest {
                 ),
             )
             .withBean(AccountProvisioner::class.java, { AccountProvisioner { _, _ -> UUID.randomUUID() } })
+            .withPropertyValues("unividuell.auth.frontend=spa")
             .run { context ->
                 context.getBeansOfType(SecurityFilterChain::class.java).keys shouldBe setOf("authDefaultSecurityFilterChain")
             }

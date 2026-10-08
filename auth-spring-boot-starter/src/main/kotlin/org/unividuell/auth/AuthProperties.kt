@@ -8,7 +8,14 @@ data class AuthProperties(
     val roles: Map<String, List<String>> = emptyMap(),
     val testLogin: TestLogin = TestLogin(),
     val csrfCookie: CsrfCookie = CsrfCookie(),
+    /** Who builds the pages: a single-page app in the browser, or the server. Required, no default. */
+    val frontend: Frontend? = null,
+    /** `server-rendered` only: where anonymous requests and logout land. A page of the app. */
+    val loginPage: String? = null,
 ) {
+    /** `spa` or `server-rendered` in configuration. */
+    enum class Frontend { SPA, SERVER_RENDERED }
+
     data class TestLogin(
         /** Also requires a profile other than `production`. */
         val enabled: Boolean = true,

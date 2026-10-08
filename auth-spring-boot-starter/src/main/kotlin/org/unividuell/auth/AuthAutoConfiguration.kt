@@ -27,6 +27,7 @@ import org.springframework.security.web.savedrequest.NullRequestCache
 import org.springframework.security.web.util.matcher.DispatcherTypeRequestMatcher
 import org.unividuell.auth.internal.AccountSignIn
 import org.unividuell.auth.internal.CsrfCookieFilter
+import org.unividuell.auth.internal.FrontendSetting
 import org.unividuell.auth.internal.LoginController
 import org.unividuell.auth.internal.provider.ProviderFailureHandler
 import org.unividuell.auth.internal.provider.ProviderUserService
@@ -52,6 +53,12 @@ class AuthAutoConfiguration {
     @Bean
     @Lazy(false)
     fun roleAllowlist(properties: AuthProperties): RoleAllowlist = RoleAllowlist(properties.roles)
+
+    /** Eager, for its startup checks: lazy initialization would defer them to a request. */
+    @Bean
+    @Lazy(false)
+    fun frontendSetting(properties: AuthProperties): FrontendSetting =
+        FrontendSetting(frontend = properties.frontend, loginPage = properties.loginPage)
 
     /** Eager: without an [AccountProvisioner] the start must fail, not the first sign-in. */
     @Bean
