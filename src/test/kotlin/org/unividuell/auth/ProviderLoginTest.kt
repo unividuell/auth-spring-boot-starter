@@ -84,7 +84,7 @@ class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `a failed callback cannot forge log lines`(output: CapturedOutput) {
-        // The marker is unique to this test: the capture buffer is shared with its siblings.
+        // A token no other log line carries: a forged line is one that starts with it.
         val marker = "FORGED-LOG-LINE-4711"
         val session = MockHttpSession()
 
@@ -98,12 +98,13 @@ class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
 
         mockMvc.get("/login/oauth2/code/github") {
             this.session = session
-            param("error", "access_denied\n$marker error")
+            param("error", "access_denied\n$marker error\u2028")
             param("error_description", "desc\r\n$marker description")
             param("state", state)
         }
 
         output.out.lines().filter { it.startsWith(marker) }.shouldBeEmpty()
+        output.out shouldNotContain "\u2028"
 
         // The failure is still logged, on one line.
         val lines = output.out.lines().filter { marker in it }

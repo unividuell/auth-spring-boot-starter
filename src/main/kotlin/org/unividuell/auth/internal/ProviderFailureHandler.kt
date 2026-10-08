@@ -36,9 +36,9 @@ internal class ProviderFailureHandler : AuthenticationFailureHandler {
     }
 
     // A callback's ?error and ?error_description are anonymous input: a CR or LF would forge log lines.
-    private fun String.withoutControlChars() = replace(controlChars, "?")
+    private fun String.withoutControlChars() = replace(regex = controlChars, replacement = "?")
 
     private companion object {
-        val controlChars = Regex("\\p{Cc}")
+        val controlChars = Regex("[\\p{Cc}\\p{Zl}\\p{Zp}]")
     }
 }
