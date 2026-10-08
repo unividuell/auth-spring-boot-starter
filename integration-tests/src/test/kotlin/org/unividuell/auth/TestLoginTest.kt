@@ -13,10 +13,10 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.mock.web.MockHttpSession
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import org.unividuell.auth.test.withCsrfToken
 import org.unividuell.auth.testapp.InMemoryAccounts
 import org.unividuell.auth.testapp.TestApplication
 import java.net.URI
@@ -31,7 +31,7 @@ class TestLoginTest(
 
     private fun signInAs(login: String, session: MockHttpSession = MockHttpSession()): MockHttpSession =
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             this.session = session
             param("login", login)
         }.andExpect {
@@ -74,7 +74,7 @@ class TestLoginTest(
     @Test
     fun `signing in provisions the test identity and lands on the root`() {
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "leela")
         }.andExpect {
             status { is3xxRedirection() }
@@ -126,7 +126,7 @@ class TestLoginTest(
     fun `a login that is not a configured test user is refused`() {
         // permitAll endpoint: resolving any name would let anyone become any account.
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "octocat")
         }.andExpect {
             status { isBadRequest() }
@@ -163,7 +163,7 @@ class TestLoginTest(
     @Test
     fun `signing in returns to the requested path`() {
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "leela")
             param("redirect", "/c/team/lab/sample?seed=42")
         }.andExpect {
@@ -175,7 +175,7 @@ class TestLoginTest(
     fun `signing in ignores an off-site redirect`() {
         listOf("//evil.example", "https://evil.example", "/\t/evil.example").forEach { hostile ->
             mockMvc.post("/login/test/as") {
-                with(csrf())
+                with(withCsrfToken())
                 param("login", "leela")
                 param("redirect", hostile)
             }.andExpect {
@@ -188,7 +188,7 @@ class TestLoginTest(
     fun `signing in redirects to a path with a brace instead of failing`() {
         // RedirectView would read "{b}" as a URI template variable and throw.
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "leela")
             param("redirect", "/a{b}")
         }.andExpect {
@@ -214,7 +214,7 @@ class TestLoginProvisioningFailedTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `a failing provisioner lands on the error page`() {
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "leela")
         }.andExpect {
             status { isFound() }

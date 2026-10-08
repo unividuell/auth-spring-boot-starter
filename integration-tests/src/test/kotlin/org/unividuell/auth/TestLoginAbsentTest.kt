@@ -4,11 +4,11 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
+import org.unividuell.auth.test.withCsrfToken
 import org.unividuell.auth.testapp.TestApplication
 
 /** Off means the beans do not exist: 404, never 403, which would advertise the feature. */
@@ -20,7 +20,7 @@ class TestLoginAbsentInProductionTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `the sign-in POST does not exist`() {
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "leela")
         }.andExpect { status { isNotFound() } }
     }
@@ -28,7 +28,7 @@ class TestLoginAbsentInProductionTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `the unlock POST does not exist`() {
         mockMvc.post("/login/test/unlock") {
-            with(csrf())
+            with(withCsrfToken())
             param("key", "anything")
         }.andExpect { status { isNotFound() } }
     }
@@ -41,7 +41,7 @@ class TestLoginSwitchedOffTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `the sign-in POST does not exist`() {
         mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "leela")
         }.andExpect { status { isNotFound() } }
     }

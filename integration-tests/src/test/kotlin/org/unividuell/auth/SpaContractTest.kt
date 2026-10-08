@@ -10,19 +10,14 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.context.ApplicationContext
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.unividuell.auth.testapp.TestApplication
 
-/**
- * A fresh context, and no `csrf()` in here: that post-processor swaps the shared CsrfFilter's
- * cookie repository for a session one for good, and other classes share this context.
- */
+/** The contract a single-page app relies on (README, "The SPA contract"). */
 @SpringBootTest(classes = [TestApplication::class])
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class SpaContractTest(
     @Autowired val mockMvc: MockMvc,
     @Autowired val context: ApplicationContext,

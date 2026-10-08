@@ -19,6 +19,13 @@
 			<artifactId>auth-spring-boot-starter</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<!-- The lib tests itself with the helpers it hands out. -->
+		<dependency>
+			<groupId>org.unividuell</groupId>
+			<artifactId>auth-spring-boot-starter-test</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

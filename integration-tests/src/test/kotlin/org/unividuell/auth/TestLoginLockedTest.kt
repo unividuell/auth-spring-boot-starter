@@ -10,13 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.mock.web.MockHttpSession
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.unividuell.auth.internal.testlogin.FakeSignInGate
+import org.unividuell.auth.test.withCsrfToken
 import org.unividuell.auth.testapp.TestApplication
 
 /** The locked half: the only place the lock is shut. Everything else runs without a key. */
@@ -28,7 +28,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
 
     private fun unlockedCookie(): Cookie {
         val value = mockMvc.post("/login/test/unlock") {
-            with(csrf())
+            with(withCsrfToken())
             param("key", "open-sesame")
         }.andReturn().response.setCookieValue(FakeSignInGate.COOKIE_NAME).shouldNotBeNull()
 
@@ -57,7 +57,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `a wrong key changes nothing and reveals nothing`() {
         val response = mockMvc.post("/login/test/unlock") {
-            with(csrf())
+            with(withCsrfToken())
             param("key", "guessing")
         }.andExpect {
             status { isOk() }
@@ -71,7 +71,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `the right key issues the cookie and returns to the picker`() {
         val response = mockMvc.post("/login/test/unlock") {
-            with(csrf())
+            with(withCsrfToken())
             param("key", "open-sesame")
         }.andExpect {
             status { isFound() }
@@ -91,7 +91,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
     fun `unlocking carries the redirect through to the picker`() {
         // Post/Redirect/Get: the destination must survive the moment the key is entered.
         mockMvc.post("/login/test/unlock") {
-            with(csrf())
+            with(withCsrfToken())
             param("key", "open-sesame")
             param("redirect", "/c/team/lab/sample?seed=42")
         }.andExpect {
@@ -102,7 +102,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `a wrong key keeps the redirect for the next attempt`() {
         mockMvc.post("/login/test/unlock") {
-            with(csrf())
+            with(withCsrfToken())
             param("key", "guessing")
             param("redirect", "/c/team/lab/sample?seed=42")
         }.andReturn().response.contentAsString shouldContain """name="redirect" value="/c/team/lab/sample?seed=42""""
@@ -118,7 +118,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
     fun `the sign-in POST is locked too, not just the page that shows it`() {
         // The logins are public in the config; an unguarded POST is the picker without the picker.
         val result = mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             param("login", "leela")
         }.andExpect {
             redirectedUrl("/login/start")
@@ -130,7 +130,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
     @Test
     fun `with the cookie the sign-in POST works`() {
         val signedIn = mockMvc.post("/login/test/as") {
-            with(csrf())
+            with(withCsrfToken())
             cookie(unlockedCookie())
             param("login", "leela")
         }.andExpect {
@@ -144,7 +144,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
     fun `logout does not spend the unlock`() {
         // "Once per browser profile": unlock once, then switch users freely.
         val response = mockMvc.post("/logout") {
-            with(csrf())
+            with(withCsrfToken())
             cookie(unlockedCookie())
         }.andExpect {
             status { isNoContent() }

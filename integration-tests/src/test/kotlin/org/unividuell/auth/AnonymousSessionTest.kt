@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
-import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
@@ -20,9 +19,6 @@ import org.unividuell.auth.testapp.TestApplication
  * Anonymous traffic creates no HTTP session: with Spring Session JDBC each one is a database row.
  *
  * Not pinned: /oauth2/authorization/{id}, which stores the authorization request in one by design.
- *
- * Each class gets a fresh context: csrf() in other classes leaves a session-backed CSRF repository
- * in the shared one, and every request there would create a session.
  */
 
 /** The request left no session behind, not even an empty one. */
@@ -31,7 +27,6 @@ private fun ResultActionsDsl.shouldCreateNoSession() = andReturn().request.getSe
 /** localhost: no profile, the picker is open. */
 @SpringBootTest(classes = [TestApplication::class])
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class AnonymousSessionTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
@@ -71,7 +66,6 @@ class AnonymousSessionTest(@Autowired val mockMvc: MockMvc) {
 @AutoConfigureMockMvc
 @ActiveProfiles("staging")
 @TestPropertySource(properties = ["unividuell.auth.test-login.key=open-sesame"])
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class AnonymousSessionLockedTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
@@ -96,7 +90,6 @@ class AnonymousSessionLockedTest(@Autowired val mockMvc: MockMvc) {
 @SpringBootTest(classes = [TestApplication::class])
 @AutoConfigureMockMvc
 @ActiveProfiles("production")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class AnonymousSessionProviderTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
