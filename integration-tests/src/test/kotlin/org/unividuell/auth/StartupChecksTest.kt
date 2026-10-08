@@ -84,7 +84,7 @@ class StartupChecksTest {
         runner.withPropertyValues(*google, "spring.profiles.active=production").run { context ->
             val message = context.startupFailure.shouldNotBeNull().rootMessage()
             message shouldContain "'google'"
-            message shouldContain "0.1.0 maps only 'github'"
+            message shouldContain "the starter maps only 'github'"
         }
     }
 
@@ -98,6 +98,7 @@ class StartupChecksTest {
             val message = context.startupFailure.shouldNotBeNull().rootMessage()
             message shouldContain "'github'"
             message shouldContain "openid"
+            message shouldContain "the starter maps only 'github', over plain OAuth2"
         }
     }
 

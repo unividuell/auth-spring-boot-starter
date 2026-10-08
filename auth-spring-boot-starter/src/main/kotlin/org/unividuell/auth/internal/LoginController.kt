@@ -88,10 +88,10 @@ private fun singleProviderPath(ids: List<String>): String {
 private fun checkMapped(registration: ClientRegistration) {
     val id = registration.registrationId
     check(ProviderUserService.supports(id)) {
-        "OAuth2 client '$id' has no identity mapping — 0.1.0 maps only 'github'"
+        "OAuth2 client '$id' has no identity mapping — the starter maps only 'github'"
     }
     check(OidcScopes.OPENID !in registration.scopes) {
         "OAuth2 client '$id' requests scope 'openid', but there is no OpenID Connect mapping yet — " +
-            "0.1.0 maps only 'github', over plain OAuth2"
+            "the starter maps only 'github', over plain OAuth2"
     }
 }
