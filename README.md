@@ -137,9 +137,11 @@ button to `/login/start`.
   Only page navigations count: a `GET` with `Sec-Fetch-Mode: navigate`, or a `GET` without that
   header. A fetch or htmx request is not remembered — replayed as a `GET` after sign-in it would
   land on a fragment or a 405.
-- `login-page` must be a page of the app: a path starting with `/`, outside `/login/` and
-  `/oauth2/`. A logout that lands on `/login/start` would start the sign-in again, and in production
-  the provider signs the user straight back in.
+- `login-page` must be a page of the app: a plain path starting with `/` — letters, digits and
+  `/ . _ ~ -`, no `//` and no `.` or `..` segment — outside `/login/` and `/oauth2/` (the bare `/login`
+  is fine). A logout that lands on `/login/start` would start the sign-in again, and in production the
+  provider signs the user straight back in. No wildcards: the starter opens `login-page` to anonymous
+  requests, and `/**` would open the whole app.
 - CSRF: forms rendered with Thymeleaf's `th:action` carry the hidden `_csrf` field by themselves.
   htmx sends the token as a header when the page declares it once, e.g.
   `<body th:hx-headers="|{&quot;X-XSRF-TOKEN&quot;: &quot;${_csrf.token}&quot;}|">`.
@@ -167,7 +169,9 @@ off and register a client, or run without a profile.
 ## Refuses to start when
 
 - `frontend` is not set;
-- `frontend` is `server-rendered` and `login-page` is missing, or not a page of the app;
+- `frontend` is `server-rendered` and `login-page` is missing, or not a page of the app: not a plain
+  path (letters, digits and `/ . _ ~ -`, no `//` and no `.` or `..` segment), or under `/login/` or
+  `/oauth2/`;
 - `frontend` is `spa` and `login-page` is set;
 - there is no OAuth2 client and no active test login (no way in);
 - there are several clients and no test login (the chooser page does not exist yet);

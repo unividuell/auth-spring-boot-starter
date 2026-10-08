@@ -1,5 +1,6 @@
 package org.unividuell.auth
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
@@ -198,23 +199,29 @@ class StartupChecksTest {
     @Test
     fun `refuses a login page that is not a page of the app`() {
         // Under /login/ and /oauth2/ a logout would start the sign-in again and sign straight back in.
+        // The page is opened to anonymous requests as a path pattern: a wildcard would open the whole app.
+        // Dot segments and percent-encoding hide a path under /login/ until the browser normalizes it.
         val notAppPages = listOf(
             "login", "//evil.example", "/\\evil.example", "/login/start", "/login/test/as",
             "/oauth2/authorization/github", "/welcome?next=/", "/welcome#top",
+            "/**", "/*", "/{page}", "/{*rest}",
+            "/./login/start", "/a/../login/start", "/log%69n/start", "/a//b",
         )
-        for (page in notAppPages) {
-            bare.withPropertyValues("unividuell.auth.frontend=server-rendered", "unividuell.auth.login-page=$page")
-                .run { context ->
-                    withClue(page) {
-                        context.startupFailure.shouldNotBeNull().rootMessage() shouldContain "must be a page of the app"
+        assertSoftly {
+            for (page in notAppPages) {
+                bare.withPropertyValues("unividuell.auth.frontend=server-rendered", "unividuell.auth.login-page=$page")
+                    .run { context ->
+                        withClue(page) {
+                            context.startupFailure?.rootMessage().orEmpty() shouldContain "must be a page of the app"
+                        }
                     }
-                }
+            }
         }
     }
 
     @Test
     fun `starts a server-rendered app with a page of its own`() {
-        for (page in listOf("/login", "/welcome")) {
+        for (page in listOf("/login", "/welcome", "/sign-in", "/a/b_c.d~e")) {
             bare.withPropertyValues("unividuell.auth.frontend=server-rendered", "unividuell.auth.login-page=$page")
                 .run { context -> withClue(page) { context.startupFailure.shouldBeNull() } }
         }

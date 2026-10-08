@@ -30,7 +30,8 @@ class FrontendSetting(frontend: Frontend?, loginPage: String?) {
                 "unividuell.auth.login-page is required for frontend server-rendered — a page of the app, e.g. /login"
             }
             check(isAppPage(page)) {
-                "unividuell.auth.login-page '$page' must be a page of the app: a path starting with / outside /login/ and /oauth2/"
+                "unividuell.auth.login-page '$page' must be a page of the app: a plain path starting with / " +
+                    "(letters, digits and / . _ ~ -, no // or . or .. segments), outside /login/ and /oauth2/"
             }
             page
         }
@@ -50,11 +51,19 @@ class FrontendSetting(frontend: Frontend?, loginPage: String?) {
 /**
  * A plain path on this site that the lib does not own. A logout that lands under /login/ or /oauth2/
  * starts the sign-in again, which in production signs the user straight back in.
+ *
+ * Plain, because the page is opened to anonymous requests as a path pattern: a wildcard or a
+ * template variable such as `{page}` would open the whole app. And because the prefix check reads
+ * the text as written: a dot segment, an empty segment or a percent-encoded letter hides a path
+ * under /login/ until the browser or the container normalizes it.
  */
 private fun isAppPage(path: String): Boolean =
     path.startsWith("/") &&
-        !path.startsWith("//") &&
-        !path.startsWith("/\\") &&
-        path.none { it == '?' || it == '#' } &&
+        path.all { it in PAGE_CHARACTERS } &&
+        "//" !in path &&
+        path.split('/').none { it == "." || it == ".." } &&
         !path.startsWith("/login/") &&
         !path.startsWith("/oauth2/")
+
+/** Unreserved characters (RFC 3986) and the slash: nothing a path pattern, a query or an encoding reads. */
+private val PAGE_CHARACTERS: Set<Char> = (('A'..'Z') + ('a'..'z') + ('0'..'9') + "/._~-".toList()).toSet()
