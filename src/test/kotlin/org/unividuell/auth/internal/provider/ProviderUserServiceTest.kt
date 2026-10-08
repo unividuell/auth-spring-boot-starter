@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.provider
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -19,6 +19,7 @@ import org.unividuell.auth.AccountProvisioner
 import org.unividuell.auth.AuthPrincipal
 import org.unividuell.auth.ExternalIdentity
 import org.unividuell.auth.RoleAllowlist
+import org.unividuell.auth.internal.AccountSignIn
 import java.time.Instant
 import java.util.UUID
 

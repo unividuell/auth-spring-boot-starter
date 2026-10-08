@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.provider
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.unividuell.auth.ExternalIdentity
+import org.unividuell.auth.internal.AccountSignIn
 
 /**
  * oauth2Login's user service: loads the provider's user-info, maps it per provider and signs the

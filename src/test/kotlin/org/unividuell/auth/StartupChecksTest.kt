@@ -10,7 +10,7 @@ import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.context.annotation.Configuration
-import org.unividuell.auth.internal.TestLoginService
+import org.unividuell.auth.internal.testlogin.TestLoginService
 import org.unividuell.auth.testapp.TestApplication
 
 /** The configurations that must not start. The runner loads no application.yaml: every key is here. */

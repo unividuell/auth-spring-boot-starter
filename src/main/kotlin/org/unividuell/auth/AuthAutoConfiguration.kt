@@ -28,9 +28,9 @@ import org.springframework.security.web.util.matcher.DispatcherTypeRequestMatche
 import org.unividuell.auth.internal.AccountSignIn
 import org.unividuell.auth.internal.CsrfCookieFilter
 import org.unividuell.auth.internal.LoginController
-import org.unividuell.auth.internal.ProviderFailureHandler
-import org.unividuell.auth.internal.ProviderUserService
-import org.unividuell.auth.internal.TestLoginConfiguration
+import org.unividuell.auth.internal.provider.ProviderFailureHandler
+import org.unividuell.auth.internal.provider.ProviderUserService
+import org.unividuell.auth.internal.testlogin.TestLoginConfiguration
 
 /**
  * Runs before Boot's own security auto-configurations, actuator's included, so that its default

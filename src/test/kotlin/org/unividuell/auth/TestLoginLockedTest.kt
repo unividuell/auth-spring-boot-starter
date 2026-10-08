@@ -16,7 +16,7 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import org.unividuell.auth.internal.FakeSignInGate
+import org.unividuell.auth.internal.testlogin.FakeSignInGate
 import org.unividuell.auth.testapp.TestApplication
 
 /** The locked half: the only place the lock is shut. Everything else runs without a key. */

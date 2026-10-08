@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.provider
 
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException
 import org.springframework.security.oauth2.core.OAuth2Error

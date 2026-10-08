@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.testlogin
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldNotBeNull

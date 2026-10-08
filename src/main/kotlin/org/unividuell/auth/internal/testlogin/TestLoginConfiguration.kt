@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.testlogin
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.context.annotation.Profile
 import org.springframework.core.env.Environment
 import org.unividuell.auth.AuthProperties
+import org.unividuell.auth.internal.AccountSignIn
 
 /**
  * Everything of the test login, behind two gates: never under `production`, and only while

@@ -12,6 +12,8 @@ import org.springframework.security.oauth2.core.oidc.OidcScopes
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
+import org.unividuell.auth.internal.provider.ProviderUserService
+import org.unividuell.auth.internal.testlogin.TestLoginService
 
 /**
  * Owns `GET /login/start`, the one URL the SPA's sign-in button points at: the picker while the test
@@ -61,10 +63,7 @@ class LoginController(
         val picker = testLogin
             ?: return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, requireNotNull(providerPath)).build()
 
-        if (!picker.gate.isOpen(request)) {
-            return html(LoginPages.locked(csrf = csrfToken(request), redirect = redirect, wrongKey = false))
-        }
-        return html(LoginPages.picker(csrf = csrfToken(request), redirect = redirect, users = picker.users))
+        return html(picker.entryPage(request = request, redirect = redirect))
     }
 }
 

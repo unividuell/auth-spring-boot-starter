@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.testlogin
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
@@ -9,16 +9,16 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
-import org.springframework.security.web.csrf.CsrfToken
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.view.RedirectView
+import org.unividuell.auth.internal.html
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-/** The test login's two POSTs. The picker page itself is `LoginController`'s. */
+/** The test login's two POSTs. The entry page is [TestLoginService.entryPage], served by `LoginController`. */
 @Controller
 class TestLoginController(private val testLogin: TestLoginService) {
 
@@ -33,7 +33,7 @@ class TestLoginController(private val testLogin: TestLoginService) {
         request: HttpServletRequest,
         response: HttpServletResponse,
     ): RedirectView {
-        // The page's door is guarded in LoginController; this is the other door.
+        // TestLoginService.entryPage guards the page's door; this is the other door.
         if (!testLogin.gate.isOpen(request)) return redirectTo("/login/start")
 
         val user = testLogin.find(login) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "unknown test user")
@@ -71,7 +71,7 @@ class TestLoginController(private val testLogin: TestLoginService) {
         if (!testLogin.gate.accepts(key)) {
             // No rate limit guards this endpoint, so noticing attempts is what remains. Never the key.
             logger.warn { "rejected a wrong test-login key" }
-            return html(LoginPages.locked(csrf = csrfToken(request), redirect = redirect, wrongKey = true))
+            return html(TestLoginPages.locked(csrf = csrfToken(request), redirect = redirect, wrongKey = true))
         }
 
         testLogin.gate.unlock(request = request, response = response)
@@ -88,5 +88,3 @@ class TestLoginController(private val testLogin: TestLoginService) {
     /** Expansion off: RedirectView would read "{...}" in the target as a template and throw. */
     private fun redirectTo(target: String) = RedirectView(target).apply { setExpandUriTemplateVariables(false) }
 }
-
-fun csrfToken(request: HttpServletRequest): CsrfToken = request.getAttribute(CsrfToken::class.java.name) as CsrfToken

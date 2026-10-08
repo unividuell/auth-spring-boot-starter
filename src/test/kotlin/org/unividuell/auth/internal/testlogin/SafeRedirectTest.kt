@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.testlogin
 
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test

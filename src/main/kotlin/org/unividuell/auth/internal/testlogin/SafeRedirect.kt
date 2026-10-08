@@ -1,4 +1,4 @@
-package org.unividuell.auth.internal
+package org.unividuell.auth.internal.testlogin
 
 /**
  * [candidate] if it is a path on this site, else "/". Protocol-relative forms leave the site; tab,
