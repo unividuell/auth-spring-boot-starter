@@ -27,10 +27,18 @@ internal class ProviderFailureHandler : AuthenticationFailureHandler {
         // Error code and description only: the cause chain may carry the provider's response.
         logger.warn {
             val error = (exception as? OAuth2AuthenticationException)?.error
-            "provider sign-in failed: ${error?.errorCode ?: exception.javaClass.simpleName} ${error?.description.orEmpty()}"
-                .trimEnd()
+            val code = (error?.errorCode ?: exception.javaClass.simpleName).withoutControlChars()
+            val description = error?.description.orEmpty().withoutControlChars()
+            "provider sign-in failed: $code $description".trimEnd()
         }
 
         redirectStrategy.sendRedirect(request, response, "/login?error")
+    }
+
+    // A callback's ?error and ?error_description are anonymous input: a CR or LF would forge log lines.
+    private fun String.withoutControlChars() = replace(controlChars, "?")
+
+    private companion object {
+        val controlChars = Regex("\\p{Cc}")
     }
 }

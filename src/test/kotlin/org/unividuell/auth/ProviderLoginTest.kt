@@ -1,5 +1,7 @@
 package org.unividuell.auth
 
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.string.shouldContain
@@ -17,6 +19,8 @@ import org.springframework.security.web.WebAttributes
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.web.util.UriComponentsBuilder
+import org.springframework.web.util.UriUtils
 import org.unividuell.auth.testapp.TestApplication
 
 /** Production: one client, no test login. `/login` belongs to the provider. */
@@ -76,6 +80,35 @@ class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
 
         output.out shouldContain "authorization_request_not_found"
         output.out shouldNotContain "leaked-code-4711"
+    }
+
+    @Test
+    fun `a failed callback cannot forge log lines`(output: CapturedOutput) {
+        // The marker is unique to this test: the capture buffer is shared with its siblings.
+        val marker = "FORGED-LOG-LINE-4711"
+        val session = MockHttpSession()
+
+        // A real state, as any anonymous caller gets by starting the flow.
+        val location = mockMvc.get("/oauth2/authorization/github") { this.session = session }
+            .andReturn().response.getHeader("Location").shouldNotBeNull()
+        val state = UriUtils.decode(
+            UriComponentsBuilder.fromUriString(location).build().queryParams.getFirst("state").shouldNotBeNull(),
+            Charsets.UTF_8,
+        )
+
+        mockMvc.get("/login/oauth2/code/github") {
+            this.session = session
+            param("error", "access_denied\n$marker error")
+            param("error_description", "desc\r\n$marker description")
+            param("state", state)
+        }
+
+        output.out.lines().filter { it.startsWith(marker) }.shouldBeEmpty()
+
+        // The failure is still logged, on one line.
+        val lines = output.out.lines().filter { marker in it }
+        lines.shouldHaveSize(1)
+        lines.single() shouldContain "provider sign-in failed"
     }
 
     @Test
