@@ -17,17 +17,12 @@ import org.springframework.test.web.servlet.post
 import org.unividuell.auth.testapp.TestApplication
 
 /*
- * Anonymous traffic creates no HTTP session. With Spring Session JDBC every session is a database
- * row, so a cookie-less healthcheck that creates one per hit fills the table: a sibling app
- * collected about 88k empty sessions that way. The lib's part of the promise: NullRequestCache,
- * the CSRF token in a cookie, a sessionless provider failure handler, pages that need no session.
+ * Anonymous traffic creates no HTTP session: with Spring Session JDBC each one is a database row.
  *
- * Not pinned: /oauth2/authorization/{id}. Spring stores the authorization request in a session
- * there, by design — it is how the callback finds it again.
+ * Not pinned: /oauth2/authorization/{id}, which stores the authorization request in one by design.
  *
- * Each class below owns a fresh context. csrf() in other classes swaps the shared CsrfFilter's
- * cookie repository for a session-backed one for good; there every request would create a session
- * and these tests would fail for a reason that has nothing to do with the lib.
+ * Each class gets a fresh context: csrf() in other classes leaves a session-backed CSRF repository
+ * in the shared one, and every request there would create a session.
  */
 
 /** The request left no session behind, not even an empty one. */

@@ -16,6 +16,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.mock.web.MockHttpSession
 import org.springframework.security.web.WebAttributes
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -23,10 +24,14 @@ import org.springframework.web.util.UriComponentsBuilder
 import org.springframework.web.util.UriUtils
 import org.unividuell.auth.testapp.TestApplication
 
-/** Production: one client, no test login. `/login` belongs to the provider. */
+/**
+ * Production: one client, no test login. `/login` belongs to the provider. A fresh context:
+ * csrf() in TestLoginAbsentInProductionTest would leave a session-backed CSRF repository behind.
+ */
 @SpringBootTest(classes = [TestApplication::class])
 @AutoConfigureMockMvc
 @ActiveProfiles("production")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @ExtendWith(OutputCaptureExtension::class)
 class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
 
