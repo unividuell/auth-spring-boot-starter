@@ -111,6 +111,10 @@ as `staging`, needs the key. The starter assumes the root context path.
 
 - `AuthPrincipal` is a snapshot taken at sign-in and serialized into the session. Only configured
   roles belong in it. Read anything granted at runtime live from your own rows.
+- Anonymous requests create no session, except starting a provider sign-in:
+  `/oauth2/authorization/{id}` keeps the authorization request in one. With Spring Session JDBC
+  every session is a row. Never inject `HttpSession` or call `getSession(true)` in code that runs
+  for anonymous requests (a `@ModelAttribute`, a filter, an interceptor).
 - `org.unividuell.auth.internal` is not API. Do not component-scan `org.unividuell.auth`: the
   auto-configuration registers everything under its conditions; a scan would pick up the
   test-login controller outside them.
