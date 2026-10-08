@@ -90,7 +90,7 @@ silently lost behind its logout handler.
 unividuell:
   auth:
     frontend: spa                       # or server-rendered; required, no default
-    login-page: /login                  # server-rendered only, required there
+    # login-page: /login                # server-rendered only, required there; refused for spa
     roles:
       super-admin: ${SUPER_ADMINS:}     # provider:login, comma-separated → ROLE_SUPER_ADMIN
     test-login:
@@ -157,7 +157,8 @@ mockMvc.post("/login/test/as") { with(withCsrfToken()); param("login", "Fry") }
 
 `signedInAs` puts the principal into an `OAuth2AuthenticationToken`, as both doors do, and adds a
 CSRF token. `withCsrfToken` holds the token the way a browser does: the `XSRF-TOKEN` cookie, echoed
-in the `X-XSRF-TOKEN` header.
+in the `X-XSRF-TOKEN` header. Both send the same token, `TEST_CSRF_TOKEN`; a page rendered for such a
+request carries it, e.g. in a form's `_csrf` field.
 
 Never use spring-security-test's `csrf()` with this starter. It replaces the shared CsrfFilter's
 cookie repository with a session-backed one, for good: every later request in the same test context
