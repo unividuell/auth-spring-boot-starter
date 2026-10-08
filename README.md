@@ -15,6 +15,17 @@ Requires Java 25, Spring Boot 4.1 and the servlet stack (Spring MVC).
 </dependency>
 ```
 
+The app commits the lib's file repository (see [Releasing](#releasing)) and points Maven at it:
+
+```xml
+<repositories>
+  <repository>
+    <id>unividuell-local</id>
+    <url>file://${project.basedir}/maven-repo</url>
+  </repository>
+</repositories>
+```
+
 Provide the one bean the starter needs. Both doors, the provider and the test login, end here:
 
 ```kotlin
@@ -106,5 +117,12 @@ as `staging`, needs the key. The starter assumes the root context path.
 
 ## Releasing
 
-Push a tag `vX.Y.Z` on `main`; the release workflow tests, signs and publishes that version to
-Maven Central. The pom itself stays on the next `-SNAPSHOT`.
+No Maven Central for now. Each app commits the lib's file repository.
+
+```bash
+./mvnw versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false
+git commit -am "Release X.Y.Z" && git tag vX.Y.Z
+./mvnw -B deploy -DskipTests -DaltDeploymentRepository=app::file:///absolute/path/to/app/core/maven-repo
+```
+
+Commit that directory in the app. Then bump the lib to the next `-SNAPSHOT`.
