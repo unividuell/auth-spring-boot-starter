@@ -14,7 +14,7 @@ import org.unividuell.auth.ExternalIdentity
 /**
  * oauth2Login's user service: loads the provider's user-info, maps it per provider and signs the
  * identity in. Every failure becomes an [OAuth2AuthenticationException], which Spring routes to
- * `/login?error` instead of failing the callback request.
+ * `/login/start?error` instead of failing the callback request.
  */
 class ProviderUserService(
     private val signIn: AccountSignIn,

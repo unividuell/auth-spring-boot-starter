@@ -14,9 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 
 /**
- * Owns `GET /login`, the one URL the SPA's sign-in button points at: the picker while the test login
- * is on, the provider otherwise. Spring's generated login page stays off because oauth2Login names
- * this URL as its login page.
+ * Owns `GET /login/start`, the one URL the SPA's sign-in button points at: the picker while the test
+ * login is on, the provider otherwise. Spring's generated login page stays off because oauth2Login
+ * names this URL as its login page. The bare `/login` stays unmapped: an SPA routes it itself, and
+ * edge and dev proxy forward only the paths below it.
  *
  * `?error` always renders the error page: Spring sends a failed callback here, and redirecting
  * straight back to the provider would loop on a claim that keeps failing. Only the parameter's
@@ -50,7 +51,7 @@ class LoginController(
         }
     }
 
-    @GetMapping("/login")
+    @GetMapping("/login/start")
     fun login(
         request: HttpServletRequest,
         @RequestParam(required = false) redirect: String?,

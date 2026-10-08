@@ -14,7 +14,7 @@ internal object LoginPages {
         title = "Anmeldung fehlgeschlagen",
         body = """<h1>Anmeldung fehlgeschlagen</h1>
           <p>Die Anmeldung hat nicht geklappt.</p>
-          <a class="action" href="/login">Erneut versuchen</a>""",
+          <a class="action" href="/login/start">Erneut versuchen</a>""",
     )
 
     fun picker(csrf: CsrfToken, redirect: String?, users: List<AuthProperties.TestUser>): String {

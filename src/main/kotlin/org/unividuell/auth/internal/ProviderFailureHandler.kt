@@ -32,7 +32,7 @@ internal class ProviderFailureHandler : AuthenticationFailureHandler {
             "provider sign-in failed: $code $description".trimEnd()
         }
 
-        redirectStrategy.sendRedirect(request, response, "/login?error")
+        redirectStrategy.sendRedirect(request, response, "/login/start?error")
     }
 
     // A callback's ?error and ?error_description are anonymous input: a CR or LF would forge log lines.

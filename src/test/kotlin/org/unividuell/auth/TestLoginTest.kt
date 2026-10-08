@@ -40,7 +40,7 @@ class TestLoginTest(
 
     @Test
     fun `GET login renders the picker`() {
-        mockMvc.get("/login").andExpect {
+        mockMvc.get("/login/start").andExpect {
             status { isOk() }
             content { contentType("text/html;charset=UTF-8") }
             content { string(containsString("leela")) }
@@ -52,18 +52,23 @@ class TestLoginTest(
 
     @Test
     fun `the picker declares a mobile viewport`() {
-        mockMvc.get("/login").andExpect {
+        mockMvc.get("/login/start").andExpect {
             content { string(containsString("""<meta name="viewport" content="width=device-width,initial-scale=1">""")) }
         }
     }
 
     @Test
     fun `the picker lists every configured user in order`() {
-        val html = mockMvc.get("/login").andReturn().response.contentAsString
+        val html = mockMvc.get("/login/start").andReturn().response.contentAsString
 
         val positions = AuthProperties.FUTURAMA.map { html.indexOf("""name="login" value="${it.login}"""") }
         positions.forEach { it shouldBeGreaterThan -1 }
         positions shouldBe positions.sorted()
+    }
+
+    @Test
+    fun `the bare login path stays the app's while the picker is on`() {
+        mockMvc.get("/login").andExpect { status { isNotFound() } }
     }
 
     @Test
@@ -143,7 +148,7 @@ class TestLoginTest(
     @Test
     fun `the picker carries a redirect through to its forms`() {
         // get(URI) keeps the percent-escapes as they are; get(String) would encode them again.
-        mockMvc.get(URI("/login?redirect=/c/team/lab/sample%3Fseed%3D42")).andExpect {
+        mockMvc.get(URI("/login/start?redirect=/c/team/lab/sample%3Fseed%3D42")).andExpect {
             status { isOk() }
             content { string(containsString("""name="redirect" value="/c/team/lab/sample?seed=42"""")) }
         }
@@ -151,7 +156,7 @@ class TestLoginTest(
 
     @Test
     fun `the picker escapes a redirect containing markup`() {
-        mockMvc.get("""/login?redirect=/x"><script>alert(1)</script>""").andReturn().response.contentAsString shouldContain
+        mockMvc.get("""/login/start?redirect=/x"><script>alert(1)</script>""").andReturn().response.contentAsString shouldContain
             "&lt;script&gt;"
     }
 
@@ -213,7 +218,7 @@ class TestLoginProvisioningFailedTest(@Autowired val mockMvc: MockMvc) {
             param("login", "leela")
         }.andExpect {
             status { isFound() }
-            redirectedUrl("/login?error")
+            redirectedUrl("/login/start?error")
         }
     }
 }

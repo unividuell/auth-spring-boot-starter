@@ -47,12 +47,12 @@ class AnonymousSessionTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `the picker creates no session`() {
-        mockMvc.get("/login").andExpect { status { isOk() } }.shouldCreateNoSession()
+        mockMvc.get("/login/start").andExpect { status { isOk() } }.shouldCreateNoSession()
     }
 
     @Test
     fun `the error page creates no session`() {
-        mockMvc.get("/login?error").andExpect { status { isOk() } }.shouldCreateNoSession()
+        mockMvc.get("/login/start?error").andExpect { status { isOk() } }.shouldCreateNoSession()
     }
 
     @Test
@@ -76,13 +76,13 @@ class AnonymousSessionLockedTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `the locked page creates no session`() {
-        mockMvc.get("/login").andExpect { status { isOk() } }.shouldCreateNoSession()
+        mockMvc.get("/login/start").andExpect { status { isOk() } }.shouldCreateNoSession()
     }
 
     @Test
     fun `a wrong key creates no session`() {
         // The token travels as the SPA sends it, cookie and header: csrf() would put a session behind it.
-        val token = mockMvc.get("/login").andReturn().response.setCookieValue("XSRF-TOKEN").shouldNotBeNull()
+        val token = mockMvc.get("/login/start").andReturn().response.setCookieValue("XSRF-TOKEN").shouldNotBeNull()
 
         mockMvc.post("/login/test/unlock") {
             cookie(Cookie("XSRF-TOKEN", token))
@@ -101,7 +101,7 @@ class AnonymousSessionProviderTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `the redirect to the provider creates no session`() {
-        mockMvc.get("/login").andExpect {
+        mockMvc.get("/login/start").andExpect {
             status { isFound() }
             redirectedUrl("/oauth2/authorization/github")
         }.shouldCreateNoSession()

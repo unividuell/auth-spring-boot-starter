@@ -37,7 +37,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `without the cookie the picker is replaced by the locked page`() {
-        val html = mockMvc.get("/login").andExpect {
+        val html = mockMvc.get("/login/start").andExpect {
             status { isOk() }
             content { contentType("text/html;charset=UTF-8") }
         }.andReturn().response.contentAsString
@@ -50,7 +50,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `the locked page declares a mobile viewport`() {
-        mockMvc.get("/login").andReturn().response.contentAsString shouldContain
+        mockMvc.get("/login/start").andReturn().response.contentAsString shouldContain
             """<meta name="viewport" content="width=device-width,initial-scale=1">"""
     }
 
@@ -75,7 +75,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
             param("key", "open-sesame")
         }.andExpect {
             status { isFound() }
-            redirectedUrl("/login")
+            redirectedUrl("/login/start")
         }.andReturn().response
 
         response.setCookieValue(FakeSignInGate.COOKIE_NAME).shouldNotBeNull() shouldNotContain "open-sesame"
@@ -83,7 +83,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `with the cookie the picker renders`() {
-        mockMvc.get("/login") { cookie(unlockedCookie()) }.andReturn().response.contentAsString shouldContain
+        mockMvc.get("/login/start") { cookie(unlockedCookie()) }.andReturn().response.contentAsString shouldContain
             """name="login" value="leela""""
     }
 
@@ -95,7 +95,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
             param("key", "open-sesame")
             param("redirect", "/c/team/lab/sample?seed=42")
         }.andExpect {
-            redirectedUrl("/login?redirect=%2Fc%2Fteam%2Flab%2Fsample%3Fseed%3D42")
+            redirectedUrl("/login/start?redirect=%2Fc%2Fteam%2Flab%2Fsample%3Fseed%3D42")
         }
     }
 
@@ -110,7 +110,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `the locked page escapes a redirect containing markup`() {
-        mockMvc.get("""/login?redirect=/x"><script>alert(1)</script>""").andReturn().response.contentAsString shouldContain
+        mockMvc.get("""/login/start?redirect=/x"><script>alert(1)</script>""").andReturn().response.contentAsString shouldContain
             "&lt;script&gt;"
     }
 
@@ -121,7 +121,7 @@ class TestLoginLockedTest(@Autowired val mockMvc: MockMvc) {
             with(csrf())
             param("login", "leela")
         }.andExpect {
-            redirectedUrl("/login")
+            redirectedUrl("/login/start")
         }.andReturn()
 
         result.request.getSession(false).shouldBeNull()

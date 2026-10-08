@@ -83,7 +83,7 @@ class AuthAutoConfiguration {
             // oauth2Login cannot start without a client; no client means no provider door at all.
             if (clients.ifAvailable != null) {
                 oauth2Login {
-                    loginPage = "/login"
+                    loginPage = "/login/start"
                     authenticationFailureHandler = ProviderFailureHandler()
                     userInfoEndpoint {
                         userService = providerUserService

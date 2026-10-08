@@ -25,7 +25,7 @@ import org.springframework.web.util.UriUtils
 import org.unividuell.auth.testapp.TestApplication
 
 /**
- * Production: one client, no test login. `/login` belongs to the provider. A fresh context:
+ * Production: one client, no test login. `/login/start` belongs to the provider. A fresh context:
  * csrf() in TestLoginAbsentInProductionTest would leave a session-backed CSRF repository behind.
  */
 @SpringBootTest(classes = [TestApplication::class])
@@ -36,12 +36,17 @@ import org.unividuell.auth.testapp.TestApplication
 class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
-    fun `GET login sends the browser to the only provider`() {
-        // Spring's own generated login page would answer 200 here, before any controller.
-        mockMvc.get("/login").andExpect {
+    fun `GET login start sends the browser to the only provider`() {
+        mockMvc.get("/login/start").andExpect {
             status { isFound() }
             redirectedUrl("/oauth2/authorization/github")
         }
+    }
+
+    @Test
+    fun `the bare login path stays the app's`() {
+        // An SPA routes /login itself. Spring's own generated login page would answer 200 here.
+        mockMvc.get("/login").andExpect { status { isNotFound() } }
     }
 
     @Test
@@ -58,7 +63,7 @@ class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
         // No authorization request was ever saved, so Spring rejects the callback as forged.
         mockMvc.get("/login/oauth2/code/github?code=abc&state=forged").andExpect {
             status { isFound() }
-            redirectedUrl("/login?error")
+            redirectedUrl("/login/start?error")
         }
     }
 
@@ -66,7 +71,7 @@ class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
     fun `a failed callback leaves no session behind`() {
         // Spring's default handler stores the exception in a session, creating one for a forged callback.
         mockMvc.get("/login/oauth2/code/github?code=abc&state=forged").andExpect {
-            redirectedUrl("/login?error")
+            redirectedUrl("/login/start?error")
         }.andReturn().request.getSession(false).shouldBeNull()
     }
 
@@ -119,20 +124,20 @@ class ProviderLoginTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `the error page renders and never redirects`() {
-        val response = mockMvc.get("/login?error").andExpect {
+        val response = mockMvc.get("/login/start?error").andExpect {
             status { isOk() }
             content { contentType("text/html;charset=UTF-8") }
         }.andReturn().response
 
         response.getHeader("Location").shouldBeNull()
         response.contentAsString shouldContain "Anmeldung fehlgeschlagen"
-        response.contentAsString shouldContain """<a class="action" href="/login">Erneut versuchen</a>"""
+        response.contentAsString shouldContain """<a class="action" href="/login/start">Erneut versuchen</a>"""
     }
 
     @Test
     fun `the error page declares a mobile viewport`() {
         // Without it phones lay the page out at ~980px and scale it down.
-        mockMvc.get("/login?error").andReturn().response.contentAsString shouldContain
+        mockMvc.get("/login/start?error").andReturn().response.contentAsString shouldContain
             """<meta name="viewport" content="width=device-width,initial-scale=1">"""
     }
 }

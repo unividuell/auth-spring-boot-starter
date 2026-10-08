@@ -34,7 +34,7 @@ class TestLoginController(private val testLogin: TestLoginService) {
         response: HttpServletResponse,
     ): RedirectView {
         // The page's door is guarded in LoginController; this is the other door.
-        if (!testLogin.gate.isOpen(request)) return redirectTo("/login")
+        if (!testLogin.gate.isOpen(request)) return redirectTo("/login/start")
 
         val user = testLogin.find(login) ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "unknown test user")
 
@@ -43,7 +43,7 @@ class TestLoginController(private val testLogin: TestLoginService) {
             testLogin.signIn(user)
         } catch (e: RuntimeException) {
             logger.warn(e) { "account provisioning failed for provider 'test'" }
-            return redirectTo("/login?error")
+            return redirectTo("/login/start?error")
         }
 
         // As the provider door does: a session id handed out before the sign-in must not be signed in.
@@ -78,9 +78,9 @@ class TestLoginController(private val testLogin: TestLoginService) {
 
         // URLEncoder, not UriComponentsBuilder: the latter reads "{...}" as a template variable.
         val target = if (redirect.isNullOrBlank()) {
-            "/login"
+            "/login/start"
         } else {
-            "/login?redirect=" + URLEncoder.encode(redirect, StandardCharsets.UTF_8)
+            "/login/start?redirect=" + URLEncoder.encode(redirect, StandardCharsets.UTF_8)
         }
         return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, target).build()
     }

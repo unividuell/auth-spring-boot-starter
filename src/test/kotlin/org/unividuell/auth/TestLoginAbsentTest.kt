@@ -48,6 +48,6 @@ class TestLoginSwitchedOffTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `GET login replays the production flow`() {
-        mockMvc.get("/login").andExpect { redirectedUrl("/oauth2/authorization/github") }
+        mockMvc.get("/login/start").andExpect { redirectedUrl("/oauth2/authorization/github") }
     }
 }

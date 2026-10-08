@@ -81,7 +81,7 @@ spring.security.oauth2.client.registration.github:   # production only
 
 | | localhost | staging | production |
 |---|---|---|---|
-| `GET /login` | picker | key, then picker | redirect to the provider |
+| `GET /login/start` | picker | key, then picker | redirect to the provider |
 | OAuth2 client | not needed | none | required |
 
 0.1.0 maps GitHub only: any other registration, or one requesting `openid`, refuses to start.
@@ -90,8 +90,9 @@ as `staging`, needs the key. The starter assumes the root context path.
 
 ## The SPA contract
 
-- An unauthenticated request gets **401**, never a redirect. The SPA sends the browser to `/login`
-  (with `?redirect=/path` to come back there after a test login).
+- An unauthenticated request gets **401**, never a redirect. The SPA sends the browser to
+  `/login/start` (with `?redirect=/path` to come back there after a test login). The bare `/login`
+  stays the app's own route: the starter maps nothing there.
 - Echo the `XSRF-TOKEN` cookie as the `X-XSRF-TOKEN` header on every mutating request.
 - `POST /logout` answers **204**. After signing in, the browser lands on `/`.
 
