@@ -111,22 +111,31 @@ as `staging`, needs the key. The starter assumes the root context path.
 
 - `AuthPrincipal` is a snapshot taken at sign-in and serialized into the session. Only configured
   roles belong in it. Read anything granted at runtime live from your own rows.
-- Anonymous requests create no session, except starting a provider sign-in:
-  `/oauth2/authorization/{id}` keeps the authorization request in one. With Spring Session JDBC
-  every session is a row. Never inject `HttpSession` or call `getSession(true)` in code that runs
-  for anonymous requests (a `@ModelAttribute`, a filter, an interceptor).
+- Requests that stay anonymous create no session. A completed sign-in creates one, and starting a
+  provider sign-in (`/oauth2/authorization/{id}`) keeps the authorization request in one. With
+  Spring Session JDBC every session is a row. Never inject `HttpSession` or call `getSession()` or
+  `getSession(true)` in code that runs for anonymous requests (a `@ModelAttribute`, a filter, an
+  interceptor).
 - `org.unividuell.auth.internal` is not API. Do not component-scan `org.unividuell.auth`: the
   auto-configuration registers everything under its conditions; a scan would pick up the
   test-login controller outside them.
 
 ## Releasing
 
-No Maven Central for now. Each app commits the lib's file repository.
+Each app commits the lib's file repository.
 
 ```bash
 ./mvnw versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false
 git commit -am "Release X.Y.Z" && git tag vX.Y.Z
-./mvnw -B deploy -DskipTests -DaltDeploymentRepository=app::file:///absolute/path/to/app/core/maven-repo
+./mvnw -B deploy -DskipTests -Dmaven.install.skip=true -DaltDeploymentRepository=app::file:///absolute/path/to/app/core/maven-repo
 ```
 
-Commit that directory in the app. Then bump the lib to the next `-SNAPSHOT`.
+`-Dmaven.install.skip=true`: without it `deploy` also installs into `~/.m2`, which hides a missing
+`<repository>` or an uncommitted `maven-repo/` until CI.
+
+Commit that directory in the app. Then bump the lib to the next `-SNAPSHOT`:
+
+```bash
+./mvnw versions:set -DnewVersion=X.Y.(Z+1)-SNAPSHOT -DgenerateBackupPoms=false
+git commit -am "Start X.Y.(Z+1)-SNAPSHOT"
+```
