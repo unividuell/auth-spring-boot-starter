@@ -1,0 +1,102 @@
+package org.unividuell.auth
+
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import jakarta.servlet.http.Cookie
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.TestPropertySource
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.ResultActionsDsl
+import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
+import org.unividuell.auth.testapp.TestApplication
+
+/*
+ * Anonymous traffic creates no HTTP session: with Spring Session JDBC each one is a database row.
+ *
+ * Not pinned: /oauth2/authorization/{id}, which stores the authorization request in one by design.
+ */
+
+/** The request left no session behind, not even an empty one. */
+private fun ResultActionsDsl.shouldCreateNoSession() = andReturn().request.getSession(false).shouldBeNull()
+
+/** localhost: no profile, the picker is open. */
+@SpringBootTest(classes = [TestApplication::class])
+@AutoConfigureMockMvc
+class AnonymousSessionTest(@Autowired val mockMvc: MockMvc) {
+
+    @Test
+    fun `an unauthenticated API call creates no session`() {
+        // The SPA's bootstrap call, and what a healthcheck without a cookie looks like.
+        mockMvc.get("/api/me").andExpect { status { isUnauthorized() } }.shouldCreateNoSession()
+    }
+
+    @Test
+    fun `a path excluded from the CSRF cookie creates no session`() {
+        mockMvc.get("/api/public/preview").andExpect { status { isUnauthorized() } }.shouldCreateNoSession()
+    }
+
+    @Test
+    fun `the picker creates no session`() {
+        mockMvc.get("/login/start").andExpect { status { isOk() } }.shouldCreateNoSession()
+    }
+
+    @Test
+    fun `the error page creates no session`() {
+        mockMvc.get("/login/start?error").andExpect { status { isOk() } }.shouldCreateNoSession()
+    }
+
+    @Test
+    fun `an unknown path under login creates no session`() {
+        mockMvc.get("/login/nothing").andExpect { status { isNotFound() } }.shouldCreateNoSession()
+    }
+
+    @Test
+    fun `a logout without a CSRF token creates no session`() {
+        mockMvc.post("/logout").andExpect { status { isForbidden() } }.shouldCreateNoSession()
+    }
+}
+
+/** Staging: the lock is shut, the key is known to the test only. */
+@SpringBootTest(classes = [TestApplication::class])
+@AutoConfigureMockMvc
+@ActiveProfiles("staging")
+@TestPropertySource(properties = ["unividuell.auth.test-login.key=open-sesame"])
+class AnonymousSessionLockedTest(@Autowired val mockMvc: MockMvc) {
+
+    @Test
+    fun `the locked page creates no session`() {
+        mockMvc.get("/login/start").andExpect { status { isOk() } }.shouldCreateNoSession()
+    }
+
+    @Test
+    fun `a wrong key creates no session`() {
+        // The token travels as the SPA sends it, cookie and header: csrf() would put a session behind it.
+        val token = mockMvc.get("/login/start").andReturn().response.setCookieValue("XSRF-TOKEN").shouldNotBeNull()
+
+        mockMvc.post("/login/test/unlock") {
+            cookie(Cookie("XSRF-TOKEN", token))
+            header("X-XSRF-TOKEN", token)
+            param("key", "guessing")
+        }.andExpect { status { isOk() } }.shouldCreateNoSession()
+    }
+}
+
+/** Production: one client, no test login. */
+@SpringBootTest(classes = [TestApplication::class])
+@AutoConfigureMockMvc
+@ActiveProfiles("production")
+class AnonymousSessionProviderTest(@Autowired val mockMvc: MockMvc) {
+
+    @Test
+    fun `the redirect to the provider creates no session`() {
+        mockMvc.get("/login/start").andExpect {
+            status { isFound() }
+            redirectedUrl("/oauth2/authorization/github")
+        }.shouldCreateNoSession()
+    }
+}

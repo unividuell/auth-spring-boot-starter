@@ -1,7 +1,7 @@
 # auth-spring-boot-starter
 
-Sign-in for Spring Boot apps with a same-origin SPA: GitHub sign-in in production, a test-user
-picker everywhere else — behind a key wherever a profile is active.
+Sign-in for Spring Boot apps, a single-page app's or a server-rendered one's: GitHub sign-in in
+production, a test-user picker everywhere else — behind a key wherever a profile is active.
 
 Requires Java 25, Spring Boot 4.1 and the servlet stack (Spring MVC).
 
@@ -11,7 +11,13 @@ Requires Java 25, Spring Boot 4.1 and the servlet stack (Spring MVC).
 <dependency>
   <groupId>org.unividuell</groupId>
   <artifactId>auth-spring-boot-starter</artifactId>
-  <version>0.1.0</version>
+  <version>0.3.0</version>
+</dependency>
+<dependency>
+  <groupId>org.unividuell</groupId>
+  <artifactId>auth-spring-boot-starter-test</artifactId>
+  <version>0.3.0</version>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -24,6 +30,21 @@ The app commits the lib's file repository (see [Releasing](#releasing)) and poin
     <url>file://${project.basedir}/maven-repo</url>
   </repository>
 </repositories>
+```
+
+Say which frontend the app has. There is no default, and without it the app refuses to start:
+
+```yaml
+unividuell:
+  auth:
+    frontend: spa                # a single-page app: see "The SPA contract"
+```
+
+```yaml
+unividuell:
+  auth:
+    frontend: server-rendered    # pages rendered on the server: see "Server-rendered apps"
+    login-page: /login
 ```
 
 Provide the one bean the starter needs. Both doors, the provider and the test login, end here:
@@ -59,13 +80,17 @@ fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
 
 Without a chain of your own, every request needs a signed-in user. Do not narrow yours with
 `securityMatcher`: the starter's endpoints and CSRF live in that chain, so requests outside the
-matcher lose them.
+matcher lose them. Do not configure `logout {}`, `exceptionHandling {}` or `requestCache {}` there
+either: the starter sets them for the app's frontend, and a `logoutSuccessUrl` of yours would be
+silently lost behind its logout handler.
 
 ## Configuration
 
 ```yaml
 unividuell:
   auth:
+    frontend: spa                       # or server-rendered; required, no default
+    # login-page: /login                # server-rendered only, required there; refused for spa
     roles:
       super-admin: ${SUPER_ADMINS:}     # provider:login, comma-separated → ROLE_SUPER_ADMIN
     test-login:
@@ -84,11 +109,14 @@ spring.security.oauth2.client.registration.github:   # production only
 | `GET /login/start` | picker | key, then picker | redirect to the provider |
 | OAuth2 client | not needed | none | required |
 
-0.1.0 maps GitHub only: any other registration, or one requesting `openid`, refuses to start.
+The starter maps GitHub only: any other registration, or one requesting `openid`, refuses to start.
 Profile names are taken literally: only `production` switches the test login off; any other, such
-as `staging`, needs the key. The starter assumes the root context path.
+as `staging` — or a `test` profile your tests activate — needs the key. The starter assumes the root
+context path.
 
 ## The SPA contract
+
+For `frontend: spa`.
 
 - An unauthenticated request gets **401**, never a redirect. The SPA sends the browser to
   `/login/start` (with `?redirect=/path` to come back there after a test login). The bare `/login`
@@ -96,8 +124,56 @@ as `staging`, needs the key. The starter assumes the root context path.
 - Echo the `XSRF-TOKEN` cookie as the `X-XSRF-TOKEN` header on every mutating request.
 - `POST /logout` answers **204**. After signing in, the browser lands on `/`.
 
+## Server-rendered apps
+
+For `frontend: server-rendered`, with `login-page` set to a page of the app, e.g. `/login` with a
+button to `/login/start`.
+
+- An unauthenticated request is redirected to `login-page`; htmx and fetch requests too. The starter
+  opens `login-page` to anonymous requests.
+- `POST /logout` redirects to `login-page`.
+- The page the browser asked for is remembered in a cookie (never the session); the provider
+  sign-in and the test login's picker return there. On the picker, an explicit `?redirect` wins.
+  Only page navigations count: a `GET` with `Sec-Fetch-Mode: navigate`, or a `GET` without that
+  header. A fetch or htmx request is not remembered — replayed as a `GET` after sign-in it would
+  land on a fragment or a 405.
+- `login-page` must be a page of the app: a plain path starting with `/` — letters, digits and
+  `/ . _ ~ -`, no `//` and no `.` or `..` segment — outside `/login/` and `/oauth2/` (the bare `/login`
+  is fine). A logout that lands on `/login/start` would start the sign-in again, and in production the
+  provider signs the user straight back in. No wildcards: the starter opens `login-page` to anonymous
+  requests, and `/**` would open the whole app.
+- CSRF: forms rendered with Thymeleaf's `th:action` carry the hidden `_csrf` field by themselves.
+  htmx sends the token as a header when the page declares it once, e.g.
+  `<body th:hx-headers="|{&quot;X-XSRF-TOKEN&quot;: &quot;${_csrf.token}&quot;}|">`.
+
+## Testing
+
+`auth-spring-boot-starter-test` signs MockMvc requests in the way the starter does:
+
+```kotlin
+mockMvc.post("/api/things") { with(signedInAs(AuthPrincipal(id, "github", "octocat", emptySet()))) }
+mockMvc.post("/login/test/as") { with(withCsrfToken()); param("login", "Fry") }
+```
+
+`signedInAs` puts the principal into an `OAuth2AuthenticationToken`, as both doors do, and adds a
+CSRF token. `withCsrfToken` holds the token the way a browser does: the `XSRF-TOKEN` cookie, echoed
+in the `X-XSRF-TOKEN` header. Both send the same token, `TEST_CSRF_TOKEN`; a page rendered for such a
+request carries it, e.g. in a form's `_csrf` field.
+
+Never use spring-security-test's `csrf()` with this starter. It replaces the shared CsrfFilter's
+cookie repository with a session-backed one, for good: every later request in the same test context
+gets no `XSRF-TOKEN` cookie and creates a session, and tests fail depending on which ran first.
+
+Tests that activate a profile need a test-login key like any other profile — or switch the test login
+off and register a client, or run without a profile.
+
 ## Refuses to start when
 
+- `frontend` is not set;
+- `frontend` is `server-rendered` and `login-page` is missing, or not a page of the app: not a plain
+  path (letters, digits and `/ . _ ~ -`, no `//` and no `.` or `..` segment), or under `/login/` or
+  `/oauth2/`;
+- `frontend` is `spa` and `login-page` is set;
 - there is no OAuth2 client and no active test login (no way in);
 - there are several clients and no test login (the chooser page does not exist yet);
 - the test login is on, its key is empty and any profile is active;
@@ -123,7 +199,9 @@ as `staging`, needs the key. The starter assumes the root context path.
 
 ## Releasing
 
-Each app commits the lib's file repository.
+The build has three modules: `auth-spring-boot-starter`, `auth-spring-boot-starter-test` and
+`integration-tests`, the lib's own test bed, which is never published. Each app commits the lib's
+file repository.
 
 ```bash
 ./mvnw versions:set -DnewVersion=X.Y.Z -DgenerateBackupPoms=false
@@ -134,8 +212,11 @@ git commit -am "Release X.Y.Z" && git tag vX.Y.Z
 `-Dmaven.install.skip=true`: without it `deploy` also installs into `~/.m2`, which hides a missing
 `<repository>` or an uncommitted `maven-repo/` until CI.
 
-Commit that directory in the app. Then bump the lib to the next `-SNAPSHOT`. While the starter is
-0.x, the next release is a minor one (after `0.1.0` comes `0.2.0-SNAPSHOT`):
+`deploy` puts three artifacts into the app's `maven-repo/`: `auth-spring-boot-starter-parent` (the
+modules' POMs need it), `auth-spring-boot-starter` and `auth-spring-boot-starter-test`. When an app
+moves to a new version, delete the old version's directories there first. Commit that directory in
+the app. Then bump the lib to the next `-SNAPSHOT`. While the starter is 0.x, the next release is a
+minor one (after `0.1.0` comes `0.2.0-SNAPSHOT`):
 
 ```bash
 ./mvnw versions:set -DnewVersion=X.(Y+1).0-SNAPSHOT -DgenerateBackupPoms=false

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.unividuell</groupId>
+		<artifactId>auth-spring-boot-starter-parent</artifactId>
+		<version>0.3.0-SNAPSHOT</version>
+	</parent>
+	<artifactId>auth-spring-boot-starter-integration-tests</artifactId>
+	<name>auth-spring-boot-starter-integration-tests</name>
+	<description>The lib's test bed: a minimal app on the starter, tested the way a consuming app tests itself. Never published.</description>
+	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.unividuell</groupId>
+			<artifactId>auth-spring-boot-starter</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<!-- The lib tests itself with the helpers it hands out. -->
+		<dependency>
+			<groupId>org.unividuell</groupId>
+			<artifactId>auth-spring-boot-starter-test</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Each test starter without Mockito: the lib uses none, and it self-attaches an agent the JDK warns about. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-junit-jupiter</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security-oauth2-client-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-junit-jupiter</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mockito</groupId>
+					<artifactId>mockito-junit-jupiter</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>io.kotest</groupId>
+			<artifactId>kotest-assertions-core-jvm</artifactId>
+			<version>${kotest.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>
