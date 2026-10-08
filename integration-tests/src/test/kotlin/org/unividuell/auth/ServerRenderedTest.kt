@@ -112,8 +112,16 @@ class ServerRenderedTest(@Autowired val mockMvc: MockMvc) {
 
     @Test
     fun `a forged remembered page never leads off the site`() {
-        // The cookie is the browser's to set: another host, or a path that leaves the site, lands on the root.
-        for (url in listOf("http://evil.example/garage", "http://localhost//evil.example/garage")) {
+        // The cookie is the browser's to set, so it can hold anything; every forged value lands on the root.
+        // CookieRequestCache itself drops what is not a relative path (the absolute URLs, and "//host/...").
+        // What it lets through, "/\host/...", browsers read as protocol-relative: safeRedirect stops that one.
+        val forged = listOf(
+            "http://evil.example/garage",
+            "http://localhost//evil.example/garage",
+            "//evil.example/garage",
+            "/\\evil.example/garage",
+        )
+        for (url in forged) {
             mockMvc.post("/login/test/as") {
                 cookie(Cookie("REDIRECT_URI", Base64.getEncoder().encodeToString(url.toByteArray())))
                 with(withCsrfToken())

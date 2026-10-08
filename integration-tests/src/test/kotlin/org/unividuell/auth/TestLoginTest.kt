@@ -94,8 +94,9 @@ class TestLoginTest(
 
     @Test
     fun `a single-page app's picker never returns to a remembered page`() {
-        // Only a server-rendered app remembers pages; a cookie of that name changes nothing here.
-        val remembered = Cookie("REDIRECT_URI", Base64.getEncoder().encodeToString("http://localhost/api/me".toByteArray()))
+        // Only a server-rendered app remembers pages; a cookie of that name changes nothing here. The value
+        // is what CookieRequestCache writes (Base64 of path and query), so a cache that read it would use it.
+        val remembered = Cookie("REDIRECT_URI", Base64.getEncoder().encodeToString("/api/me".toByteArray()))
 
         mockMvc.post("/login/test/as") {
             cookie(remembered)
