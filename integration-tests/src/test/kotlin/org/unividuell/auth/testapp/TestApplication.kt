@@ -44,4 +44,8 @@ class TestApiController {
 
     @GetMapping("/api/public/preview")
     fun preview(): String = "preview"
+
+    /** The login page when the app runs as `server-rendered` (ServerRenderedTest). */
+    @GetMapping("/welcome")
+    fun welcome(): String = "welcome"
 }

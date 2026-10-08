@@ -9,18 +9,23 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
+import org.springframework.security.web.savedrequest.DefaultSavedRequest
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.view.RedirectView
+import org.unividuell.auth.internal.FrontendSetting
 import org.unividuell.auth.internal.html
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 /** The test login's two POSTs. The entry page is [TestLoginService.entryPage], served by `LoginController`. */
 @Controller
-class TestLoginController(private val testLogin: TestLoginService) {
+class TestLoginController(
+    private val testLogin: TestLoginService,
+    private val frontend: FrontendSetting,
+) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -54,7 +59,18 @@ class TestLoginController(private val testLogin: TestLoginService) {
         SecurityContextHolder.setContext(context)
         securityContextRepository.saveContext(context, request, response)
 
-        return redirectTo(safeRedirect(redirect))
+        return redirectTo(if (redirect.isNullOrBlank()) rememberedPage(request, response) else safeRedirect(redirect))
+    }
+
+    /**
+     * Where a server-rendered app's visitor was headed before the login page (the request cache's
+     * cookie), path and query only, and used up. "/" when nothing was remembered — always for a
+     * single-page app, which remembers nothing.
+     */
+    private fun rememberedPage(request: HttpServletRequest, response: HttpServletResponse): String {
+        val saved = frontend.requestCache.getRequest(request, response) as? DefaultSavedRequest ?: return "/"
+        frontend.requestCache.removeRequest(request, response)
+        return safeRedirect(saved.requestURI + saved.queryString?.let { "?$it" }.orEmpty())
     }
 
     /**

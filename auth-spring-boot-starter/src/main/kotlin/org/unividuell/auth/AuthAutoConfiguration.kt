@@ -19,11 +19,12 @@ import org.springframework.security.config.annotation.web.invoke
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.HttpStatusEntryPoint
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler
+import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler
-import org.springframework.security.web.savedrequest.NullRequestCache
 import org.springframework.security.web.util.matcher.DispatcherTypeRequestMatcher
 import org.unividuell.auth.internal.AccountSignIn
 import org.unividuell.auth.internal.CsrfCookieFilter
@@ -70,20 +71,25 @@ class AuthAutoConfiguration {
     fun providerUserService(signIn: AccountSignIn): ProviderUserService = ProviderUserService(signIn = signIn)
 
     /**
-     * The SPA contract. Spring Security applies it to every HttpSecurity before the app's own
+     * Sign-in, CSRF and logout, shaped by the app's frontend: the SPA contract, or page navigation for
+     * a server-rendered app. Spring Security applies it to every HttpSecurity before the app's own
      * configuration, so these matchers precede the app's. Never `anyRequest` here: Spring rejects
      * any matcher added after it, and the app's rules still have to follow.
      */
     @Bean
     fun authHttpSecurityCustomizer(
         properties: AuthProperties,
+        frontend: FrontendSetting,
         providerUserService: ProviderUserService,
         clients: ObjectProvider<ClientRegistrationRepository>,
     ): Customizer<HttpSecurity> = Customizer { http ->
+        // Set exactly for a server-rendered app.
+        val appLoginPage = frontend.loginPage
         http {
             authorizeHttpRequests {
                 authorize(pattern = "/login/**", access = permitAll)
                 authorize(pattern = "/oauth2/**", access = permitAll)
+                if (appLoginPage != null) authorize(pattern = appLoginPage, access = permitAll)
                 // A container re-dispatches every sendError to /error; else an anonymous 400 or 404 becomes 401.
                 authorize(matches = DispatcherTypeRequestMatcher(DispatcherType.ERROR), access = permitAll)
             }
@@ -99,12 +105,13 @@ class AuthAutoConfiguration {
                 }
             }
             exceptionHandling {
-                authenticationEntryPoint = HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+                authenticationEntryPoint = when (appLoginPage) {
+                    null -> HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+                    else -> LoginUrlAuthenticationEntryPoint(appLoginPage)
+                }
             }
-            // A cached request — the SPA's bootstrap call that got the 401 — would be replayed after
-            // sign-in and land the user on raw JSON. Without a cache, sign-in goes to "/".
             requestCache {
-                requestCache = NullRequestCache()
+                requestCache = frontend.requestCache
             }
             csrf {
                 csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse()
@@ -114,7 +121,10 @@ class AuthAutoConfiguration {
             addFilterAfter<CsrfFilter>(CsrfCookieFilter(properties.csrfCookie.excludedPaths))
             logout {
                 logoutUrl = "/logout"
-                logoutSuccessHandler = HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)
+                logoutSuccessHandler = when (appLoginPage) {
+                    null -> HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)
+                    else -> SimpleUrlLogoutSuccessHandler().apply { setDefaultTargetUrl(appLoginPage) }
+                }
             }
         }
     }

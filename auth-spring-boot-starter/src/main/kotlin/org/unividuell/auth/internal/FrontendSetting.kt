@@ -1,5 +1,8 @@
 package org.unividuell.auth.internal
 
+import org.springframework.security.web.savedrequest.CookieRequestCache
+import org.springframework.security.web.savedrequest.NullRequestCache
+import org.springframework.security.web.savedrequest.RequestCache
 import org.unividuell.auth.AuthProperties.Frontend
 
 /**
@@ -31,6 +34,16 @@ class FrontendSetting(frontend: Frontend?, loginPage: String?) {
             }
             page
         }
+    }
+
+    /**
+     * Where a sign-in returns to, for both doors. A single-page app keeps nothing: its bootstrap call
+     * that got the 401, replayed after sign-in, would land the user on raw JSON. A server-rendered app
+     * keeps the page in a cookie, never the session, and only pages the browser navigated to.
+     */
+    val requestCache: RequestCache = when (this.loginPage) {
+        null -> NullRequestCache()
+        else -> CookieRequestCache().apply { setRequestMatcher(PageNavigation) }
     }
 }
 

@@ -4,6 +4,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import jakarta.servlet.http.Cookie
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,6 +21,7 @@ import org.unividuell.auth.test.withCsrfToken
 import org.unividuell.auth.testapp.InMemoryAccounts
 import org.unividuell.auth.testapp.TestApplication
 import java.net.URI
+import java.util.Base64
 
 /** localhost: no profile, no key — the picker is open. */
 @SpringBootTest(classes = [TestApplication::class])
@@ -88,6 +90,21 @@ class TestLoginTest(
             name = "Turanga Leela",
             email = null,
         )
+    }
+
+    @Test
+    fun `a single-page app's picker never returns to a remembered page`() {
+        // Only a server-rendered app remembers pages; a cookie of that name changes nothing here.
+        val remembered = Cookie("REDIRECT_URI", Base64.getEncoder().encodeToString("http://localhost/api/me".toByteArray()))
+
+        mockMvc.post("/login/test/as") {
+            cookie(remembered)
+            with(withCsrfToken())
+            param("login", "leela")
+        }.andExpect {
+            status { is3xxRedirection() }
+            redirectedUrl("/")
+        }
     }
 
     @Test
