@@ -102,12 +102,15 @@ class ServerRenderedTest(@Autowired val mockMvc: MockMvc) {
     fun `an explicit redirect wins over the remembered page`() {
         val remembered = mockMvc.get("/api/me").andReturn().remembered().shouldNotBeNull()
 
-        mockMvc.post("/login/test/as") {
+        val signIn = mockMvc.post("/login/test/as") {
             cookie(remembered)
             with(withCsrfToken())
             param("login", "Fry")
             param("redirect", "/welcome")
-        }.andExpect { redirectedUrl("/welcome") }
+        }.andExpect { redirectedUrl("/welcome") }.andReturn()
+
+        // Left behind, Spring would wrap a later request to that exact URL in the saved one, which has no headers.
+        withClue("the remembered page is used up") { signIn.remembered().shouldNotBeNull().maxAge shouldBe 0 }
     }
 
     @Test

@@ -59,17 +59,20 @@ class TestLoginController(
         SecurityContextHolder.setContext(context)
         securityContextRepository.saveContext(context, request, response)
 
-        return redirectTo(if (redirect.isNullOrBlank()) rememberedPage(request, response) else safeRedirect(redirect))
+        val target = if (redirect.isNullOrBlank()) rememberedPage(request, response) else safeRedirect(redirect)
+        // Used up even when the explicit redirect won: left behind, Spring would wrap a later request to
+        // that exact URL in the saved one, which reports no headers (htmx's HX-Request among them).
+        frontend.requestCache.removeRequest(request, response)
+        return redirectTo(target)
     }
 
     /**
      * Where a server-rendered app's visitor was headed before the login page (the request cache's
-     * cookie), path and query only, and used up. "/" when nothing was remembered — always for a
-     * single-page app, which remembers nothing.
+     * cookie), path and query only. "/" when nothing was remembered — always for a single-page app,
+     * which remembers nothing.
      */
     private fun rememberedPage(request: HttpServletRequest, response: HttpServletResponse): String {
         val saved = frontend.requestCache.getRequest(request, response) as? DefaultSavedRequest ?: return "/"
-        frontend.requestCache.removeRequest(request, response)
         return safeRedirect(saved.requestURI + saved.queryString?.let { "?$it" }.orEmpty())
     }
 
