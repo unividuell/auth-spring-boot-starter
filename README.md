@@ -134,9 +134,10 @@ git commit -am "Release X.Y.Z" && git tag vX.Y.Z
 `-Dmaven.install.skip=true`: without it `deploy` also installs into `~/.m2`, which hides a missing
 `<repository>` or an uncommitted `maven-repo/` until CI.
 
-Commit that directory in the app. Then bump the lib to the next `-SNAPSHOT`:
+Commit that directory in the app. Then bump the lib to the next `-SNAPSHOT`. While the starter is
+0.x, the next release is a minor one (after `0.1.0` comes `0.2.0-SNAPSHOT`):
 
 ```bash
-./mvnw versions:set -DnewVersion=X.Y.(Z+1)-SNAPSHOT -DgenerateBackupPoms=false
-git commit -am "Start X.Y.(Z+1)-SNAPSHOT"
+./mvnw versions:set -DnewVersion=X.(Y+1).0-SNAPSHOT -DgenerateBackupPoms=false
+git commit -am "Start X.(Y+1).0-SNAPSHOT"
 ```

@@ -39,7 +39,7 @@ class TestLoginTest(
         }.andReturn().request.session as MockHttpSession
 
     @Test
-    fun `GET login renders the picker`() {
+    fun `GET login start renders the picker`() {
         mockMvc.get("/login/start").andExpect {
             status { isOk() }
             content { contentType("text/html;charset=UTF-8") }
