@@ -24,27 +24,34 @@ data class AuthProperties(
         val users: List<TestUser> = AuthProperties.FUTURAMA,
     )
 
-    /** [name] is shown in the picker and handed to the app; [emoji] only tells the rows apart. */
-    data class TestUser(val login: String, val name: String? = null, val emoji: String = "🙂")
+    /** [name] is shown in the picker and handed to the app; [color] (`#rrggbb`) only tells the rows apart. */
+    data class TestUser(val login: String, val name: String? = null, val color: String? = null) {
+        init {
+            // Lands in a style attribute: a plain hex value or nothing.
+            require(color == null || HEX.matches(color)) { "test user $login: color must be #rrggbb, got: $color" }
+        }
+    }
 
     /** Paths whose responses must stay cookie-free, e.g. a publicly cached preview endpoint. */
     data class CsrfCookie(val excludedPaths: List<String> = emptyList())
 
     companion object {
+        private val HEX = Regex("^#[0-9a-fA-F]{6}$")
+
         /** countdown's seed users. Logins spelled exactly as before: existing rows match on them. */
         val FUTURAMA: List<TestUser> = listOf(
-            TestUser(login = "Fry", emoji = "🍕"),
-            TestUser(login = "leela", name = "Turanga Leela", emoji = "👁️"),
-            TestUser(login = "Bender", emoji = "🤖"),
-            TestUser(login = "prof", name = "Prof Farnsworth", emoji = "🔬"),
-            TestUser(login = "amy", emoji = "💅"),
-            TestUser(login = "hermes", name = "Hermes Conrad", emoji = "📋"),
-            TestUser(login = "zoidberg", name = "Dr. Zoidberg", emoji = "🦞"),
-            TestUser(login = "scruffy", name = "Scruffy", emoji = "🧹"),
-            TestUser(login = "zapp", name = "Zapp Brannigan", emoji = "🎖️"),
-            TestUser(login = "kif", name = "Kif Kroker", emoji = "😩"),
-            TestUser(login = "nibbler", name = "Nibbler", emoji = "🐾"),
-            TestUser(login = "mom", name = "Mom", emoji = "🏭"),
+            TestUser(login = "Fry", color = "#eb7d1f"),
+            TestUser(login = "leela", name = "Turanga Leela", color = "#952f8e"),
+            TestUser(login = "Bender", color = "#9daec7"),
+            TestUser(login = "prof", name = "Prof Farnsworth", color = "#f6f6f6"),
+            TestUser(login = "amy", color = "#f48fa6"),
+            TestUser(login = "hermes", name = "Hermes Conrad", color = "#34330f"),
+            TestUser(login = "zoidberg", name = "Dr. Zoidberg", color = "#f55f5f"),
+            TestUser(login = "scruffy", name = "Scruffy", color = "#2e4a50"),
+            TestUser(login = "zapp", name = "Zapp Brannigan", color = "#860523"),
+            TestUser(login = "kif", name = "Kif Kroker", color = "#afd573"),
+            TestUser(login = "nibbler", name = "Nibbler", color = "#000000"),
+            TestUser(login = "mom", name = "Mom", color = "#043e41"),
         )
     }
 }

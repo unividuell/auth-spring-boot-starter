@@ -47,8 +47,7 @@ internal object LoginPages {
             input[type=password]{width:100%;min-height:44px;padding:.5rem .75rem;margin:0 0 .5rem;
                    border:1px solid var(--border);border-radius:8px;background:transparent;color:inherit;font:inherit}
             .error{color:#dc2626;font-size:.9375rem}
-            .chip{flex:none;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;
-                  background:#e7e5e4;font-size:15px;line-height:1}
+            .chip{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:#e7e5e4}
           </style></head>
           <body><div class="card">$body</div></body></html>"""
 }

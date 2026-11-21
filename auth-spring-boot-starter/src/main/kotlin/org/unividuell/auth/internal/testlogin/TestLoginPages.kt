@@ -16,7 +16,7 @@ internal object TestLoginPages {
                  <input type="hidden" name="login" value="${escape(user.login)}"/>
                  <input type="hidden" name="redirect" value="${escape(redirect.orEmpty())}"/>
                  <button type="submit">
-                   <span class="chip" aria-hidden="true">${escape(user.emoji)}</span>
+                   <span class="chip" aria-hidden="true"${user.color?.let { " style=\"background:$it\"" }.orEmpty()}></span>
                    <span>${escape(user.name ?: user.login)}</span>
                  </button>
                </form>"""

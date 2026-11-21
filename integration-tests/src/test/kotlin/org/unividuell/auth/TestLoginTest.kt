@@ -47,8 +47,7 @@ class TestLoginTest(
             content { contentType("text/html;charset=UTF-8") }
             content { string(containsString("leela")) }
             content { string(containsString("Turanga Leela")) }
-            // The chip is decorative; without aria-hidden a screen reader announces "lobster Dr. Zoidberg".
-            content { string(containsString("""<span class="chip" aria-hidden="true">🦞</span>""")) }
+            content { string(containsString("""<span class="chip" aria-hidden="true" style="background:#f55f5f"></span>""")) }
         }
     }
 
